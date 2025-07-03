@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const Database = require('better-sqlite3');
+const fs = require('fs');
 
 const db = new Database('cards.db');
 db.pragma('journal_mode = WAL');
@@ -24,6 +25,16 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
+
+// 📥 Load Scryfall data from persistent disk
+let scryfallData = [];
+try {
+  const raw = fs.readFileSync('/DatabaseDisk/scryfall-cards.json', 'utf-8');
+  scryfallData = JSON.parse(raw);
+  console.log(`📦 Loaded ${scryfallData.length} cards from /DatabaseDisk`);
+} catch (error) {
+  console.warn('⚠️ Could not load scryfall-cards.json:', error.message);
+}
 
 // 🔀 Get 3 random cards
 app.get('/api/cards/random', (req, res) => {
