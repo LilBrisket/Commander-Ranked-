@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Commander Ranked</title>
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Bebas+Neue&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .page-header {
+      text-align: center;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 4.2rem;
+      font-weight: 400;
+      letter-spacing: 1px;
+      margin: 1.2rem 0 0.2rem;
+      color: #000;
+      opacity: 0;
+      transform: translateY(-20px);
+      animation: fadeSlideDown 0.9s ease-out forwards;
+    }
+
+    @keyframes fadeSlideDown {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    nav.nav-banner {
+      width: 100%;
+      background-color: #000;
+      padding: 0.3rem 0;
+      text-align: center;
+    }
+
+    nav.nav-banner a {
+      margin: 0 1rem;
+      text-decoration: none;
+      font-weight: 600;
+      color: #fff;
+      padding: 0.4rem 0.8rem;
+      border-radius: 4px;
+      transition: color 0.2s ease, background 0.2s ease;
+    }
+
+    nav.nav-banner a:hover {
+      color: #ddd;
+      background-color: rgba(255, 255, 255, 0.1);
+    }
+
+    main.container {
+      margin-top: 2rem;
+    }
+
+    .card-list {
+      display: flex;
+      gap: 1.5rem;
+      justify-content: center;
+      margin: 1.5rem 0;
+      flex-wrap: wrap;
+    }
+
+    .card-item {
+      width: 200px;
+      text-align: center;
+      cursor: grab;
+    }
+
+    .card-image {
+      width: 100%;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+    }
+
+    .card-name {
+      margin-top: 0.5rem;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <h1 class="page-header">Commander Ranked</h1>
+
+  <nav class="nav-banner">
+    <a href="/index.html">Rank These Cards</a>
+    <a href="/leaderboard.html">Leaderboard</a>
+    <a href="/rules.html">Rank Your Own Deck</a>
+    <a href="/about.html">About</a>
+  </nav>
+
+  <main class="container">
+    <div id="card-titles" class="card-labels">
+      <div><strong>Best</strong></div>
+      <div><strong>Mid</strong></div>
+      <div><strong>Worst</strong></div>
+    </div>
+
+    <div id="card-loading" style="display: none; font-weight: bold; margin-top: 1rem;">
+      Loading cards...
+    </div>
+
+    <div id="card-container" class="card-list"></div>
+
+    <button id="submit-ranking" disabled>Submit Ranking</button>
+  </main>
+
+  <footer class="footer">
+    Card data and images courtesy of
+    <a href="https://scryfall.com" target="_blank" rel="noopener noreferrer">Scryfall</a>.
+    Magic: The Gathering and its trademarks are © Wizards of the Coast. This site is unaffiliated.
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+  <script>
+    const fallbackImage = "https://placehold.co/223x310?text=No+Image";
+
+    function createCardElement(card) {
+      const cardDiv = document.createElement("div");
+      cardDiv.className = "card-item";
+      cardDiv.dataset.id = card.id;
+
+      const img = document.createElement("img");
+      img.className = "card-image";
+      img.alt = card.name;
+      img.src = card.image && card.image.trim() !== "" ? card.image : fallbackImage;
+      img.onerror = () => (img.src = fallbackImage);
+
+      const name = document.createElement("div");
+      name.className = "card-name";
+      name.textContent = card.name;
+
+      cardDiv.appendChild(img);
+      cardDiv.appendChild(name);
+      return cardDiv;
+    }
+
+    async function loadCards() {
+      const container = document.getElementById("card-container");
+      const loading = document.getElementById("card-loading");
+      container.innerHTML = "";
+      loading.style.display = "block";
+
+      try {
+        const res = await fetch("/api/cards/random");
+        const cards = await res.json();
+        cards.forEach(card => container.appendChild(createCardElement(card)));
+      } catch (err) {
+        console.error("❌ Failed to load cards:", err);
+      } finally {
+        loading.style.display = "none";
+        document.getElementById("submit-ranking").disabled = false;
+        new Sortable(container, { animation: 150 });
+      }
+    }
+
+    document.getElementById("submit-ranking").addEventListener("click", async () => {
+      const container = document.getElementById("card-container");
+      const items = Array.from(container.children);
+      const ranking = items.map(item => item.dataset.id);
+
+      if (ranking.length !== 3) {
+        alert("You must rank exactly 3 cards.");
+        return;
+      }
+
+      console.log("📬 Submitting ranking:", ranking);
+
+      await fetch("/api/rankings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ranking })
+      });
+
+      document.getElementById("submit-ranking").disabled = true;
+      loadCards();
+    });
+
+    window.addEventListener("DOMContentLoaded", () => {
+      loadCards();
+    });
+  </script>
+</body>
+</html>
+
+
+

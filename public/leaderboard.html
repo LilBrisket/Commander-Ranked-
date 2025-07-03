@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Commander Ranked</title>
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Bebas+Neue&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <h1 class="page-header">Commander Ranked</h1>
+
+  <nav class="nav-banner">
+    <a href="/index.html">Rank These Cards</a>
+    <a href="/leaderboard.html">Leaderboard</a>
+    <a href="/rules.html">Rank Your Own Deck</a>
+    <a href="/about.html">About</a>
+  </nav>
+
+  <main class="container">
+
+    <!-- 🔎 Filters -->
+    <form id="filter-form">
+      <input id="filter-name" placeholder="Name" />
+
+      <select id="filter-color">
+        <option value="">All Colors</option>
+        <option value="White">White</option>
+        <option value="Blue">Blue</option>
+        <option value="Black">Black</option>
+        <option value="Red">Red</option>
+        <option value="Green">Green</option>
+        <option value="Multicolor">Multicolor</option>
+        <option value="Colorless">Colorless</option>
+      </select>
+
+      <select id="filter-type">
+        <option value="">All Types</option>
+        <option value="Creature">Creature</option>
+        <option value="Artifact">Artifact</option>
+        <option value="Enchantment">Enchantment</option>
+        <option value="Planeswalker">Planeswalker</option>
+        <option value="Instant">Instant</option>
+        <option value="Sorcery">Sorcery</option>
+        <option value="Legendary Creature">Legendary Creature</option>
+      </select>
+
+      <button type="submit">Filter</button>
+    </form>
+
+    <!-- 🏆 Leaderboard results -->
+    <ul id="leaderboard" class="card-list"></ul>
+
+    <!-- 🔁 Pagination controls -->
+    <div id="pagination-controls">
+      <button id="prev-btn">Previous</button>
+      <button id="next-btn">Next</button>
+    </div>
+  </main>
+
+  <footer class="footer">
+    Card data and images courtesy of
+    <a href="https://scryfall.com" target="_blank" rel="noopener noreferrer">Scryfall</a>.
+    Magic: The Gathering and its trademarks are © Wizards of the Coast. This site is unaffiliated.
+  </footer>
+
+  <script src="leaderboard.js"></script>
+</body>
+</html>
