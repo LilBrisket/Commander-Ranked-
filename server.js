@@ -1,10 +1,14 @@
-// server.js
-
 const express = require('express');
 const cors = require('cors');
 const Database = require('better-sqlite3');
+const path = require('path');
 
-const db = new Database('cards.db');
+// Use Render's persistent storage for the database
+const dbPath = process.env.RENDER_PERSISTENT_DIR 
+  ? path.join(process.env.RENDER_PERSISTENT_DIR, 'cards.db') 
+  : 'cards.db';  // Fall back to local storage if not on Render
+
+const db = new Database(dbPath);
 db.pragma('journal_mode = WAL');
 
 // 🛠️ Ensure cards table exists
@@ -156,6 +160,7 @@ app.get('/api/leaderboard', (req, res) => {
 app.listen(PORT, () => {
   console.log(`🚀 Server running at http://localhost:${PORT}`);
 });
+
 
 
 
