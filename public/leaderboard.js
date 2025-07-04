@@ -1,6 +1,5 @@
 const fallbackImage = "https://placehold.co/223x310?text=No+Image";
 
-// Confirm the script is loaded
 console.log("✅ leaderboard.js loaded!");
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -11,7 +10,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const nameInput = document.getElementById("filter-name");
   const colorSelect = document.getElementById("filter-color");
   const typeSelect = document.getElementById("filter-type");
+  const sortSelect = document.getElementById("filter-sort");
   const filterForm = document.getElementById("filter-form");
+  const clearFiltersBtn = document.getElementById("clear-filters");
 
   let currentPage = 0;
   const limit = 20;
@@ -20,71 +21,97 @@ document.addEventListener("DOMContentLoaded", () => {
     return {
       name: nameInput?.value.trim() || "",
       color: colorSelect?.value || "",
-      type: typeSelect?.value || ""
+      type: typeSelect?.value || "",
+      sort: sortSelect?.value || "desc"
     };
   }
 
   async function loadLeaderboard(page = 0) {
-    leaderboard.innerHTML = "";
+    leaderboard.replaceChildren(); // safer than .innerHTML = ""
     const offset = page * limit;
-    const { name, color, type } = getFilters();
+    const { name, color, type, sort } = getFilters();
 
     const params = new URLSearchParams({
       limit,
       offset,
       ...(name && { name }),
       ...(color && { color }),
-      ...(type && { type })
+      ...(type && { type }),
+      ...(sort && { sort })
     });
 
     console.log(`📡 Fetching /api/leaderboard?${params}`);
 
     try {
       const res = await fetch(`/api/leaderboard?${params}`);
-      const data = await res.json();
-      console.log("📊 Leaderboard data:", data);
+      if (!res.ok) throw new Error(`Server responded with ${res.status}`);
+      const result = await res.json();
+      console.log("📊 Leaderboard response:", result);
 
-      if (!Array.isArray(data)) {
+      const { total, cards } = result;
+
+      if (!Array.isArray(cards)) {
         leaderboard.innerHTML = "<li>Invalid leaderboard response format.</li>";
         return;
       }
 
-      if (data.length === 0) {
+      if (cards.length === 0) {
         leaderboard.innerHTML = "<li>No cards found. Try clearing filters or reseeding.</li>";
-      } else {
-        data.forEach(card => {
-          const li = document.createElement("li");
-          li.className = "card-entry";
-
-          const cardLink = document.createElement("a");
-          cardLink.href = `https://scryfall.com/search?q=${encodeURIComponent(card.cardName)}`;
-          cardLink.target = "_blank";
-          cardLink.rel = "noopener noreferrer";
-          cardLink.style.textDecoration = "none";
-          cardLink.style.color = "inherit";
-
-          const img = document.createElement("img");
-          img.src = card.cardImage || fallbackImage;
-          img.alt = card.cardName;
-
-          const nameDiv = document.createElement("div");
-          nameDiv.className = "card-name";
-          nameDiv.textContent = card.cardName;
-
-          const pointsDiv = document.createElement("div");
-          pointsDiv.className = "card-points";
-          pointsDiv.textContent = `${card.points} pts`;
-
-          cardLink.appendChild(img);
-          cardLink.appendChild(nameDiv);
-          li.appendChild(cardLink);
-          li.appendChild(pointsDiv);
-          leaderboard.appendChild(li);
-        });
+        return;
       }
 
+      cards.forEach((card, index) => {
+        const globalIndex = offset + index;
+        const rankNumber = sort === "asc"
+          ? total - globalIndex
+          : globalIndex + 1;
+
+        const li = document.createElement("li");
+        li.className = "card-entry";
+
+        // Rank Number
+        const rankDiv = document.createElement("div");
+        rankDiv.className = "card-rank";
+        rankDiv.textContent = `#${rankNumber}`;
+
+        // Card Link
+        const cardLink = document.createElement("a");
+        cardLink.href = `https://scryfall.com/search?q=${encodeURIComponent(card.cardName || "")}`;
+        cardLink.target = "_blank";
+        cardLink.rel = "noopener noreferrer";
+        cardLink.className = "card-link"; // Recommended: style in CSS instead of inline
+
+        // Card Image
+        const img = document.createElement("img");
+        img.src = card.cardImage || fallbackImage;
+        img.alt = card.cardName || "Magic card";
+        img.onerror = function () {
+          if (this.src !== fallbackImage) {
+            this.src = fallbackImage;
+          }
+        };
+
+        // Name
+        const nameDiv = document.createElement("div");
+        nameDiv.className = "card-name";
+        nameDiv.textContent = card.cardName || "Unknown";
+
+        // Points
+        const pointsDiv = document.createElement("div");
+        pointsDiv.className = "card-points";
+        pointsDiv.textContent = `${card.points} pts`;
+
+        // Assemble
+        li.appendChild(rankDiv);
+        cardLink.appendChild(img);
+        cardLink.appendChild(nameDiv);
+        li.appendChild(cardLink);
+        li.appendChild(pointsDiv);
+        leaderboard.appendChild(li);
+      });
+
       prevBtn.disabled = page === 0;
-      nextBtn.disabled = data.length < limit;
+      nextBtn.disabled = cards.length < limit;
     } catch (err) {
       console.error("❌ Error fetching leaderboard:", err);
       leaderboard.innerHTML = "<li>Error loading leaderboard</li>";
@@ -93,6 +120,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  // Pagination
   prevBtn?.addEventListener("click", () => {
     if (currentPage > 0) {
       currentPage--;
@@ -105,11 +133,25 @@ document.addEventListener("DOMContentLoaded", () => {
     loadLeaderboard(currentPage);
   });
 
+  // Filters
   filterForm?.addEventListener("submit", e => {
     e.preventDefault();
     currentPage = 0;
     loadLeaderboard(currentPage);
   });
 
+  clearFiltersBtn?.addEventListener("click", () => {
+    nameInput.value = "";
+    colorSelect.value = "";
+    typeSelect.value = "";
+    sortSelect.value = "desc";
+    currentPage = 0;
+    loadLeaderboard(currentPage);
+  });
+
+  // Initial load
   loadLeaderboard(currentPage);
 });
+
+
+

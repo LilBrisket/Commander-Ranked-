@@ -3,94 +3,50 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Rank Magic: The Gathering Commander cards and view the global leaderboard." />
   <title>Commander Ranked</title>
 
   <!-- Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Bebas+Neue&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
 
+  <!-- ✅ Mobile layout fix -->
   <style>
-    body {
-      margin: 0;
-      font-family: 'Inter', sans-serif;
-    }
-
-    .page-header {
-      text-align: center;
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 4.2rem;
-      font-weight: 400;
-      letter-spacing: 1px;
-      margin: 1.2rem 0 0.2rem;
-      color: #000;
-      opacity: 0;
-      transform: translateY(-20px);
-      animation: fadeSlideDown 0.9s ease-out forwards;
-    }
-
-    @keyframes fadeSlideDown {
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    nav.nav-banner {
-      width: 100%;
-      background-color: #000;
-      padding: 0.3rem 0;
-      text-align: center;
-    }
-
-    nav.nav-banner a {
-      margin: 0 1rem;
-      text-decoration: none;
-      font-weight: 600;
-      color: #fff;
-      padding: 0.4rem 0.8rem;
-      border-radius: 4px;
-      transition: color 0.2s ease, background 0.2s ease;
-    }
-
-    nav.nav-banner a:hover {
-      color: #ddd;
-      background-color: rgba(255, 255, 255, 0.1);
-    }
-
-    main.container {
-      margin-top: 2rem;
-    }
-
-    .card-list {
+    .arrow-labels {
       display: flex;
-      gap: 1.5rem;
-      justify-content: center;
-      margin: 1.5rem 0;
-      flex-wrap: wrap;
+      justify-content: space-between;
+      padding: 0 0.5rem;
     }
 
-    .card-item {
-      width: 200px;
-      text-align: center;
-      cursor: grab;
-    }
+    @media (max-width: 600px) {
+      html {
+        font-size: 90%;
+      }
 
-    .card-image {
-      width: 100%;
-      border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
-    }
+      #card-container {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+      }
 
-    .card-name {
-      margin-top: 0.5rem;
-      font-weight: 600;
+      .card-item {
+        width: 220px;
+        flex: 0 0 auto;
+      }
+
+      .arrow-bar {
+        padding: 0.25rem 1rem;
+      }
+
+      .arrow-labels span {
+        font-size: 0.9rem;
+      }
     }
   </style>
 </head>
 <body>
   <h1 class="page-header">Commander Ranked</h1>
 
-  <nav class="nav-banner">
+  <nav class="nav-banner" role="navigation">
     <a href="/index.html">Rank These Cards</a>
     <a href="/leaderboard.html">Leaderboard</a>
     <a href="/rules.html">Rank Your Own Deck</a>
@@ -98,10 +54,15 @@
   </nav>
 
   <main class="container">
-    <div id="card-titles" class="card-labels">
-      <div><strong>Best</strong></div>
-      <div><strong>Mid</strong></div>
-      <div><strong>Worst</strong></div>
+    <!-- 🌟 Bidirectional strength bar -->
+    <div class="arrow-bar">
+      <div class="arrow-labels">
+        <span class="arrow-label">Strongest</span>
+        <span class="arrow-label">Weakest</span>
+      </div>
+      <div class="arrow-line-wrapper">
+        <div class="arrow-line"></div>
+      </div>
     </div>
 
     <div id="card-loading" style="display: none; font-weight: bold; margin-top: 1rem;">
@@ -128,18 +89,30 @@
       cardDiv.className = "card-item";
       cardDiv.dataset.id = card.id;
 
+      const wrapper = document.createElement("div");
+      wrapper.className = "card-wrapper";
+
       const img = document.createElement("img");
       img.className = "card-image";
       img.alt = card.name;
       img.src = card.image && card.image.trim() !== "" ? card.image : fallbackImage;
-      img.onerror = () => (img.src = fallbackImage);
+      img.onerror = function () {
+        if (this.src !== fallbackImage) {
+          this.src = fallbackImage;
+        }
+      };
 
-      const name = document.createElement("div");
-      name.className = "card-name";
-      name.textContent = card.name;
+      const nameLink = document.createElement("a");
+      nameLink.className = "card-name-link";
+      nameLink.href = `https://scryfall.com/card/${card.id}`;
+      nameLink.target = "_blank";
+      nameLink.rel = "noopener noreferrer";
+      nameLink.textContent = card.name;
 
-      cardDiv.appendChild(img);
-      cardDiv.appendChild(name);
+      wrapper.appendChild(img);
+      wrapper.appendChild(nameLink);
+      cardDiv.appendChild(wrapper);
+
       return cardDiv;
     }
 
@@ -155,6 +128,7 @@
         cards.forEach(card => container.appendChild(createCardElement(card)));
       } catch (err) {
         console.error("❌ Failed to load cards:", err);
+        container.innerHTML = "<p style='color: red; font-weight: bold;'>⚠️ Failed to load cards. Please try again later.</p>";
       } finally {
         loading.style.display = "none";
         document.getElementById("submit-ranking").disabled = false;
@@ -167,17 +141,29 @@
       const items = Array.from(container.children);
       const ranking = items.map(item => item.dataset.id);
 
-      if (ranking.length !== 3) {
-        alert("You must rank exactly 3 cards.");
+      if (ranking.length !== 4) {
+        alert("You must rank exactly 4 cards.");
         return;
       }
 
-      console.log("📬 Submitting ranking:", ranking);
+      // Assign scores: [2, 1, -1, -2]
+      const scoredRanking = ranking.map((id, index) => {
+        let score = 0;
+        switch (index) {
+          case 0: score = 2; break;
+          case 1: score = 1; break;
+          case 2: score = -1; break;
+          case 3: score = -2; break;
+        }
+        return { id, score };
+      });
+
+      console.log("📬 Submitting ranking with scores:", scoredRanking);
 
       await fetch("/api/rankings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ranking })
+        body: JSON.stringify({ ranking: scoredRanking })
       });
 
       document.getElementById("submit-ranking").disabled = true;
@@ -190,6 +176,11 @@
   </script>
 </body>
 </html>
+
+
+
+
+
 
 
 

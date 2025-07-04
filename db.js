@@ -3,11 +3,12 @@
 const fs = require('fs');
 const path = require('path');
 const Database = require('better-sqlite3');
-const db = new Database('cards.db');
 
+// 📂 Initialize database
+const db = new Database('cards.db');
 db.pragma('journal_mode = WAL');
 
-// 🛠️ Ensure 'cards' table exists with required columns
+// 🛠️ Create table if it doesn't exist
 db.prepare(`
   CREATE TABLE IF NOT EXISTS cards (
     id TEXT PRIMARY KEY,
@@ -20,10 +21,18 @@ db.prepare(`
   )
 `).run();
 
-// 🧪 Seed cards from Scryfall JSON if table is empty
-try {
-  const existing = db.prepare(`SELECT COUNT(*) AS count FROM cards`).get();
-  if (existing.count === 0) {
+// 🎨 Color identity mapping
+const colorMap = {
+  W: 'White',
+  U: 'Blue',
+  B: 'Black',
+  R: 'Red',
+  G: 'Green',
+};
+
+// 🌱 Seed Scryfall cards if table is empty
+function seedCardsFromScryfall() {
+  try {
     const raw = fs.readFileSync(path.join(__dirname, 'scryfall-cards.json'), 'utf-8');
     const scryfallCards = JSON.parse(raw);
 
@@ -36,9 +45,9 @@ try {
 
     for (const card of scryfallCards) {
       const id = card.id;
-      const name = card.name;
+      const name = (card.name || '').trim();
 
-      // 🎨 Get image from normal or front face
+      // 🎴 Get image URI
       const imageCandidate =
         card.image_uris?.normal ||
         card.card_faces?.[0]?.image_uris?.normal ||
@@ -48,38 +57,43 @@ try {
         ? imageCandidate
         : null;
 
-      // 🧠 Convert color identity codes to readable format
+      // 🎨 Convert color identity codes
       const color = Array.isArray(card.color_identity)
-        ? card.color_identity
-            .map(c => ({
-              W: 'White',
-              U: 'Blue',
-              B: 'Black',
-              R: 'Red',
-              G: 'Green'
-            }[c] || c))
-            .join(', ')
+        ? card.color_identity.map(c => colorMap[c] || c).join(', ')
         : null;
 
       // 📜 Get type line
       const type = card.type_line || null;
 
-      // ✅ Insert valid cards only
+      // ✅ Insert only valid cards
       if (id && name && image) {
-        console.log(`→ Seeding: ${name} — ${image}`);
         insert.run(id, name, image, color, type);
         added++;
+        if (added % 500 === 0) {
+          console.log(`→ Inserted ${added} cards so far...`);
+        }
+      } else {
+        console.log(`⚠️ Skipped: ${name || 'Unknown'} — missing image or ID.`);
       }
-
-      if (added >= 50) break; // Limit for development
     }
 
-    console.log(`🃏 Inserted ${added} cards from Scryfall JSON.`);
+    console.log(`✅ Finished seeding. Total cards inserted: ${added}`);
+  } catch (err) {
+    console.error('❌ Failed to load or insert Scryfall cards:', err);
+  }
+}
+
+// 🔍 Check if seeding is needed
+try {
+  const existing = db.prepare(`SELECT COUNT(*) AS count FROM cards`).get();
+
+  if (existing.count === 0) {
+    seedCardsFromScryfall();
   } else {
     console.log(`📦 Database already contains ${existing.count} cards.`);
   }
 } catch (err) {
-  console.error('❌ Failed to load or insert Scryfall cards:', err.message);
+  console.error('❌ Error checking card count:', err);
 }
 
 module.exports = db;

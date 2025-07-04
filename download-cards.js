@@ -1,8 +1,9 @@
 const fs = require('fs');
 const https = require('https');
+const path = require('path');
 
 const bulkDataUrl = 'https://api.scryfall.com/bulk-data';
-const output = 'scryfall-cards.json';
+const outputFile = path.join(__dirname, 'scryfall-cards.json');
 
 console.log('🚀 Fetching latest bulk data metadata from Scryfall...');
 
@@ -22,7 +23,7 @@ https.get(
       try {
         const parsed = JSON.parse(data);
 
-        if (!parsed || !parsed.data || !Array.isArray(parsed.data)) {
+        if (!parsed?.data?.length) {
           console.error('❌ Unexpected response format from Scryfall.');
           console.log('🔎 Raw response:', data.slice(0, 500));
           return;
@@ -30,39 +31,47 @@ https.get(
 
         const defaultCards = parsed.data.find(item => item.type === 'default_cards');
 
-        if (!defaultCards || !defaultCards.download_uri) {
+        if (!defaultCards?.download_uri) {
           console.error('❌ Could not find default_cards download URI.');
           return;
         }
 
         const downloadUrl = defaultCards.download_uri;
-        console.log(`📦 Downloading from: ${downloadUrl}`);
+        console.log(`📦 Downloading card data from: ${downloadUrl}`);
 
         https.get(downloadUrl, downloadRes => {
           if (downloadRes.statusCode !== 200) {
-            console.error(`❌ Failed to download. Status: ${downloadRes.statusCode}`);
+            console.error(`❌ Download failed. Status: ${downloadRes.statusCode}`);
             return;
           }
 
-          const file = fs.createWriteStream(output);
+          const file = fs.createWriteStream(outputFile);
+          let downloaded = 0;
+
+          downloadRes.on('data', chunk => {
+            downloaded += chunk.length;
+            process.stdout.write(`\r⬇️  Downloaded: ${(downloaded / 1024 / 1024).toFixed(2)} MB`);
+          });
+
           downloadRes.pipe(file);
 
           file.on('finish', () => {
             file.close();
-            console.log(`✅ Download complete! Saved to "${output}"`);
+            console.log(`\n✅ Download complete! Saved to "${outputFile}"`);
           });
         }).on('error', err => {
-          console.error('🚨 Download error:', err.message);
+          console.error('🚨 Error during card download:', err.message);
         });
 
       } catch (err) {
-        console.error('❌ Failed to parse bulk metadata:', err.message);
+        console.error('❌ Failed to parse metadata:', err.message);
       }
     });
   }
 ).on('error', err => {
-  console.error('🚨 Metadata fetch error:', err.message);
+  console.error('🚨 Error fetching metadata:', err.message);
 });
+
 
 
 

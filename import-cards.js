@@ -32,9 +32,19 @@ try {
   process.exit(1);
 }
 
+// 🧠 Color map
+const colorMap = {
+  W: 'White',
+  U: 'Blue',
+  B: 'Black',
+  R: 'Red',
+  G: 'Green'
+};
+
+// 🛠️ Prepared insert statement
 const insert = db.prepare(`
-  INSERT OR IGNORE INTO cards (id, name, image)
-  VALUES (?, ?, ?)
+  INSERT OR IGNORE INTO cards (id, name, image, color, type)
+  VALUES (?, ?, ?, ?, ?)
 `);
 
 const unsupportedLayouts = [
@@ -75,14 +85,23 @@ for (const card of cards) {
 
   if (!image) { stats.noImage++; skipped++; continue; }
 
-  if (card.id && card.name) {
+  const id = card.id;
+  const name = (card.name || '').trim();
+  const color = Array.isArray(card.color_identity)
+    ? card.color_identity.map(c => colorMap[c] || c).join(', ')
+    : null;
+  const type = card.type_line || null;
+
+  if (id && name) {
     try {
-      insert.run(card.id, card.name, image);
+      insert.run(id, name, image, color, type);
       seenOracleIds.add(oracleId);
       imported++;
-      console.log(`📥 Inserted: ${card.name} → ${image}`);
+      if (imported % 500 === 0) {
+        console.log(`📦 Imported ${imported} cards so far...`);
+      }
     } catch (err) {
-      console.error(`❌ Failed to insert "${card.name}":`, err.message);
+      console.error(`❌ Failed to insert "${name}":`, err.message);
       skipped++;
     }
   } else {
@@ -98,6 +117,7 @@ console.log(`   — ${stats.notCommander} not Commander-legal`);
 console.log(`   — ${stats.badLayout} unsupported layout`);
 console.log(`   — ${stats.noImage} missing image`);
 console.log(`   — ${stats.duplicate} duplicate versions`);
+
 
 
 
