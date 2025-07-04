@@ -3,11 +3,15 @@ const cors = require('cors');
 const Database = require('better-sqlite3');
 const path = require('path');
 
-// Use Render's persistent storage for the database
+// Ensure the correct persistent disk path is used on Render or fallback to local directory for development
 const dbPath = process.env.RENDER_PERSISTENT_DIR 
-  ? path.join(process.env.RENDER_PERSISTENT_DIR, 'cards.db') 
-  : 'cards.db';  // Fall back to local storage if not on Render
+  ? path.join(process.env.RENDER_PERSISTENT_DIR, 'cards.db') // Use persistent directory on Render
+  : path.join(__dirname, 'cards.db'); // Fallback to local directory for local development
 
+// Debugging output: check where the database is being stored
+console.log("Database path:", dbPath);
+
+// Initialize the SQLite database
 const db = new Database(dbPath);
 db.pragma('journal_mode = WAL');
 
