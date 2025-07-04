@@ -10,7 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Bebas+Neue&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
 
-  <!-- ✅ Mobile layout fix -->
+  <!-- Mobile layout & image fix -->
   <style>
     .arrow-labels {
       display: flex;
@@ -31,6 +31,19 @@
       .card-item {
         width: 220px;
         flex: 0 0 auto;
+      }
+
+      .card-image {
+        width: 100%;
+        max-width: 312px;
+        height: auto;
+        display: block;
+        margin: 0 auto;
+        image-rendering: auto;
+      }
+
+      .card-name {
+        display: none !important;
       }
 
       .arrow-bar {
@@ -54,7 +67,6 @@
   </nav>
 
   <main class="container">
-    <!-- 🌟 Bidirectional strength bar -->
     <div class="arrow-bar">
       <div class="arrow-labels">
         <span class="arrow-label">Strongest</span>
@@ -82,7 +94,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
   <script>
-    const fallbackImage = "https://placehold.co/223x310?text=No+Image";
+    const fallbackImage = "https://placehold.co/312x436?text=No+Image";
 
     function createCardElement(card) {
       const cardDiv = document.createElement("div");
@@ -95,15 +107,20 @@
       const img = document.createElement("img");
       img.className = "card-image";
       img.alt = card.name;
-      img.src = card.image && card.image.trim() !== "" ? card.image : fallbackImage;
+
+      if (card.image && card.image.includes('/normal/')) {
+        const large = card.image.replace('/normal/', '/large/');
+        img.src = large;
+      } else {
+        img.src = fallbackImage;
+      }
+
       img.onerror = function () {
-        if (this.src !== fallbackImage) {
-          this.src = fallbackImage;
-        }
+        this.src = fallbackImage;
       };
 
       const nameLink = document.createElement("a");
-      nameLink.className = "card-name-link";
+      nameLink.className = "card-name";
       nameLink.href = `https://scryfall.com/card/${card.id}`;
       nameLink.target = "_blank";
       nameLink.rel = "noopener noreferrer";
@@ -146,7 +163,6 @@
         return;
       }
 
-      // Assign scores: [2, 1, -1, -2]
       const scoredRanking = ranking.map((id, index) => {
         let score = 0;
         switch (index) {
@@ -176,6 +192,11 @@
   </script>
 </body>
 </html>
+
+
+
+
+
 
 
 
