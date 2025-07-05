@@ -1,19 +1,21 @@
 // server.js
+
 const express = require('express');
 const cors = require('cors');
 const Database = require('better-sqlite3');
 const path = require('path');
 const fs = require('fs');
 
-// ✅ Use RENDER_PERSISTENT_DIR if available (Render), else local fallback
-const dbDirectory = process.env.RENDER_PERSISTENT_DIR || path.resolve(__dirname, 'DatabaseDisk');
-
-if (!fs.existsSync(dbDirectory)) {
-  fs.mkdirSync(dbDirectory, { recursive: true });
-}
-
+// ✅ Set explicit database path
+const dbDirectory = path.join(__dirname, 'DatabaseDisk');
 const dbPath = path.join(dbDirectory, 'cards.db');
+
 console.log('📂 Using database path:', dbPath);
+
+if (!fs.existsSync(dbPath)) {
+  console.error('❌ Database file not found at:', dbPath);
+  process.exit(1);
+}
 
 const db = new Database(dbPath);
 db.pragma('journal_mode = WAL');
@@ -107,7 +109,7 @@ app.get('/api/leaderboard', (req, res) => {
     const name = req.query.name?.trim();
     const color = req.query.color?.trim();
     const type = req.query.type?.trim();
-    const sort = req.query.sort?.trim().toLowerCase(); // asc or desc
+    const sort = req.query.sort?.trim().toLowerCase();
 
     let whereClause = `WHERE points != 0 AND image IS NOT NULL AND image != ''`;
     const filters = [];
@@ -165,6 +167,7 @@ app.get('/api/leaderboard', (req, res) => {
 app.listen(PORT, () => {
   console.log(`🚀 Server running at http://localhost:${PORT}`);
 });
+
 
 
 
