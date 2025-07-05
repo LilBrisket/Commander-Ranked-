@@ -1,11 +1,12 @@
+// server.js
 const express = require('express');
 const cors = require('cors');
 const Database = require('better-sqlite3');
 const path = require('path');
 const fs = require('fs');
 
-// ✅ Use RENDER_PERSISTENT_DIR if available, else fallback to ./DatabaseDisk for local dev
-const dbDirectory = process.env.RENDER_PERSISTENT_DIR || path.join(__dirname, 'DatabaseDisk');
+// ✅ Use RENDER_PERSISTENT_DIR if available (Render), else local fallback
+const dbDirectory = process.env.RENDER_PERSISTENT_DIR || path.resolve(__dirname, 'DatabaseDisk');
 
 if (!fs.existsSync(dbDirectory)) {
   fs.mkdirSync(dbDirectory, { recursive: true });
