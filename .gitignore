@@ -1,5 +1,5 @@
 node_modules/
-cards.db
 *.db-shm
 *.db-wal
 scryfall-cards.json
+cards.db

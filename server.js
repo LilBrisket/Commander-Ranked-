@@ -1,10 +1,20 @@
-// server.js
-
 const express = require('express');
 const cors = require('cors');
 const Database = require('better-sqlite3');
+const path = require('path');
+const fs = require('fs');
 
-const db = new Database('cards.db');
+// ✅ Use RENDER_PERSISTENT_DIR if available (on Render), else fallback to /DatabaseDisk
+const dbDirectory = process.env.RENDER_PERSISTENT_DIR || '/DatabaseDisk';
+
+if (!fs.existsSync(dbDirectory)) {
+  fs.mkdirSync(dbDirectory, { recursive: true });
+}
+
+const dbPath = path.join(dbDirectory, 'cards.db');
+console.log('📂 Using database path:', dbPath);
+
+const db = new Database(dbPath);
 db.pragma('journal_mode = WAL');
 
 // 🛠️ Ensure cards table exists
@@ -128,11 +138,9 @@ app.get('/api/leaderboard', (req, res) => {
       whereClause += ' AND ' + filters.join(' AND ');
     }
 
-    // 🧮 Count total
     const countQuery = `SELECT COUNT(*) AS total FROM cards ${whereClause}`;
     const { total } = db.prepare(countQuery).get(...values);
 
-    // 🃏 Get cards
     const sortOrder = sort === 'asc' ? 'ASC' : 'DESC';
     const dataQuery = `
       SELECT id AS cardId, name AS cardName, image AS cardImage, points
@@ -156,6 +164,8 @@ app.get('/api/leaderboard', (req, res) => {
 app.listen(PORT, () => {
   console.log(`🚀 Server running at http://localhost:${PORT}`);
 });
+
+
 
 
 
