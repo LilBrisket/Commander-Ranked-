@@ -1,11 +1,12 @@
+// server.js
 const express = require('express');
 const cors = require('cors');
 const Database = require('better-sqlite3');
 const path = require('path');
 const fs = require('fs');
 
-// ✅ Use RENDER_PERSISTENT_DIR if available (on Render), else fallback to /DatabaseDisk
-const dbDirectory = process.env.RENDER_PERSISTENT_DIR || '/DatabaseDisk';
+// ✅ Force use of /persistent for Render's persistent disk
+const dbDirectory = '/persistent';
 
 if (!fs.existsSync(dbDirectory)) {
   fs.mkdirSync(dbDirectory, { recursive: true });
@@ -164,6 +165,7 @@ app.get('/api/leaderboard', (req, res) => {
 app.listen(PORT, () => {
   console.log(`🚀 Server running at http://localhost:${PORT}`);
 });
+
 
 
 

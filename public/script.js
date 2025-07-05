@@ -35,7 +35,7 @@ async function loadCards() {
     const cards = await res.json();
     if (!Array.isArray(cards)) throw new Error(cards?.message || "Invalid response format");
 
-    if (cards.length < 3) {
+    if (cards.length < 4) {
       container.innerHTML = `<p style="text-align:center">⚠️ Not enough cards available in the database.</p>`;
       return;
     }
@@ -90,7 +90,7 @@ async function loadCards() {
 function validateRanking() {
   const rankedCards = document.querySelectorAll(".card-item");
   const submitBtn = document.getElementById("submit-ranking");
-  submitBtn.disabled = rankedCards.length !== 3;
+  submitBtn.disabled = rankedCards.length !== 4;
 }
 
 async function loadLeaderboard() {
@@ -125,8 +125,8 @@ async function loadLeaderboard() {
 document.getElementById("submit-ranking").addEventListener("click", async () => {
   const rankedCards = [...document.querySelectorAll(".card-item")].map(el => el.dataset.id);
 
-  if (rankedCards.length !== 3) {
-    alert("Please rank exactly 3 cards before submitting.");
+  if (rankedCards.length !== 4) {
+    alert("Please rank exactly 4 cards before submitting.");
     return;
   }
 
@@ -152,6 +152,7 @@ document.getElementById("submit-ranking").addEventListener("click", async () => 
   await loadCards();
   await loadLeaderboard();
 })();
+
 
 
 
