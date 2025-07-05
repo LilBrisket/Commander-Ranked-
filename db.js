@@ -4,11 +4,23 @@ const fs = require('fs');
 const path = require('path');
 const Database = require('better-sqlite3');
 
-// 📂 Initialize database
-const db = new Database('cards.db');
+// ✅ Use persistent directory on Render if available
+const dbDirectory = process.env.RENDER_PERSISTENT_DIR || path.join(__dirname, 'DatabaseDisk');
+
+// 📁 Ensure the directory exists
+if (!fs.existsSync(dbDirectory)) {
+  fs.mkdirSync(dbDirectory, { recursive: true });
+}
+
+// 📂 Full path to cards.db
+const dbPath = path.join(dbDirectory, 'cards.db');
+console.log('📂 Using database path:', dbPath);
+
+// 🛠️ Connect to database
+const db = new Database(dbPath);
 db.pragma('journal_mode = WAL');
 
-// 🛠️ Create table if it doesn't exist
+// 🧱 Create table if it doesn't exist
 db.prepare(`
   CREATE TABLE IF NOT EXISTS cards (
     id TEXT PRIMARY KEY,
@@ -47,7 +59,6 @@ function seedCardsFromScryfall() {
       const id = card.id;
       const name = (card.name || '').trim();
 
-      // 🎴 Get image URI
       const imageCandidate =
         card.image_uris?.normal ||
         card.card_faces?.[0]?.image_uris?.normal ||
@@ -57,15 +68,12 @@ function seedCardsFromScryfall() {
         ? imageCandidate
         : null;
 
-      // 🎨 Convert color identity codes
       const color = Array.isArray(card.color_identity)
         ? card.color_identity.map(c => colorMap[c] || c).join(', ')
         : null;
 
-      // 📜 Get type line
       const type = card.type_line || null;
 
-      // ✅ Insert only valid cards
       if (id && name && image) {
         insert.run(id, name, image, color, type);
         added++;
@@ -97,3 +105,4 @@ try {
 }
 
 module.exports = db;
+
