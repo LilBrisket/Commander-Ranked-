@@ -4,18 +4,17 @@ const Database = require('better-sqlite3');
 const path = require('path');
 const fs = require('fs');
 
-// Ensure the persistent directory exists for Render or fallback to local directory
-const dbDirectory = '/DatabaseDisk'; // Your persistent disk path
+// Check if Render's persistent directory is provided
+const dbDirectory = process.env.RENDER_PERSISTENT_DIR || '/DatabaseDisk'; // Use Render's persistent directory or fallback to /DatabaseDisk
+const dbPath = path.join(dbDirectory, 'cards.db'); // Set the database path
+
+// Ensure the persistent directory exists (for local development or custom mount paths)
 if (!fs.existsSync(dbDirectory)) {
-  fs.mkdirSync(dbDirectory, { recursive: true }); // Ensure the directory exists
+  fs.mkdirSync(dbDirectory, { recursive: true });
 }
 
-// Set the database path based on the environment (Render or local)
-const dbPath = process.env.RENDER_PERSISTENT_DIR
-  ? path.join(process.env.RENDER_PERSISTENT_DIR, 'cards.db') // For Render
-  : path.join(dbDirectory, 'cards.db'); // Fallback for local dev or other environments
-
-console.log("Database Path: ", dbPath); // Debug log to verify the path
+// Log the database path for debugging
+console.log("Database Path: ", dbPath);
 
 // Initialize the database
 const db = new Database(dbPath);
