@@ -1,3 +1,20 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:18ff7d4493925afe56034976b053c671c4eaf802e439ba0ed88e94b7ae958c81
-size 419
+{
+  "name": "card-ranker-backend",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "better-sqlite3": "^12.2.0",
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "node-fetch": "^2.7.0",
+    "uuid": "^11.1.0"
+  }
+}
