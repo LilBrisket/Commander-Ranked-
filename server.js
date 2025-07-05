@@ -2,18 +2,24 @@ const express = require('express');
 const cors = require('cors');
 const Database = require('better-sqlite3');
 const path = require('path');
+const fs = require('fs');
 
-// Ensure the correct persistent disk path is used on Render or fallback to local directory for development
-const dbPath = process.env.RENDER_PERSISTENT_DIR 
-  ? path.join(process.env.RENDER_PERSISTENT_DIR, 'cards.db') // Use persistent directory on Render
-  : path.join(__dirname, 'cards.db'); // Fallback to local directory for local development
+// Ensure the persistent directory exists for Render or fallback to local directory
+const dbDirectory = '/DatabaseDisk'; // Your persistent disk path
+if (!fs.existsSync(dbDirectory)) {
+  fs.mkdirSync(dbDirectory, { recursive: true }); // Ensure the directory exists
+}
 
-// Debugging output: check where the database is being stored
-console.log("Database path:", dbPath);
+// Set the database path based on the environment (Render or local)
+const dbPath = process.env.RENDER_PERSISTENT_DIR
+  ? path.join(process.env.RENDER_PERSISTENT_DIR, 'cards.db') // For Render
+  : path.join(dbDirectory, 'cards.db'); // Fallback for local dev or other environments
 
-// Initialize the SQLite database
+console.log("Database Path: ", dbPath); // Debug log to verify the path
+
+// Initialize the database
 const db = new Database(dbPath);
-db.pragma('journal_mode = WAL');
+db.pragma('journal_mode = WAL'); // Better performance and concurrency
 
 // 🛠️ Ensure cards table exists
 db.prepare(`
@@ -164,6 +170,7 @@ app.get('/api/leaderboard', (req, res) => {
 app.listen(PORT, () => {
   console.log(`🚀 Server running at http://localhost:${PORT}`);
 });
+
 
 
 
