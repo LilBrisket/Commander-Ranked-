@@ -1,17 +1,15 @@
-// server.js
-
 const express = require('express');
 const cors = require('cors');
 const Database = require('better-sqlite3');
 const path = require('path');
 const fs = require('fs');
 
-// ✅ Set explicit database path
-const dbDirectory = path.join(__dirname, 'DatabaseDisk');
+const dbDirectory = process.env.RENDER_PERSISTENT_DIR || path.join(__dirname, 'DatabaseDisk');
 const dbPath = path.join(dbDirectory, 'cards.db');
 
 console.log('📂 Using database path:', dbPath);
 
+// ❗ Exit early if the database is missing
 if (!fs.existsSync(dbPath)) {
   console.error('❌ Database file not found at:', dbPath);
   process.exit(1);
@@ -62,7 +60,7 @@ app.get('/api/cards/random', (req, res) => {
   }
 });
 
-// 🧮 Accept ranking and apply custom points
+// 🧮 Ranking endpoint
 app.post('/api/rankings', (req, res) => {
   const { ranking } = req.body;
 
@@ -99,7 +97,7 @@ app.post('/api/rankings', (req, res) => {
   res.json({ message: 'Thanks for ranking!' });
 });
 
-// 🏆 Leaderboard with filtering, pagination, and sorting
+// 🏆 Leaderboard with filters
 app.get('/api/leaderboard', (req, res) => {
   try {
     const maxLimit = 30000;
@@ -109,7 +107,7 @@ app.get('/api/leaderboard', (req, res) => {
     const name = req.query.name?.trim();
     const color = req.query.color?.trim();
     const type = req.query.type?.trim();
-    const sort = req.query.sort?.trim().toLowerCase();
+    const sort = req.query.sort?.trim().toLowerCase(); // asc or desc
 
     let whereClause = `WHERE points != 0 AND image IS NOT NULL AND image != ''`;
     const filters = [];
@@ -167,6 +165,7 @@ app.get('/api/leaderboard', (req, res) => {
 app.listen(PORT, () => {
   console.log(`🚀 Server running at http://localhost:${PORT}`);
 });
+
 
 
 
