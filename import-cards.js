@@ -3,10 +3,8 @@
 const fs = require('fs');
 const path = require('path');
 const Database = require('better-sqlite3');
-const { parser } = require('stream-json');
-const { streamArray } = require('stream-json/streamers/StreamArray');
-const { chain } = require('stream-chain');
 
+// ✅ Use correct persistent path for Render
 const dbPath = process.env.DATABASE_PATH || '/DatabaseDisk/cards.db';
 console.log('📂 Using database path:', dbPath);
 
@@ -18,7 +16,39 @@ if (!fs.existsSync(dbPath)) {
 const db = new Database(dbPath);
 db.pragma('journal_mode = WAL');
 
-// ✅ Make sure table exists
+console.log('🚀 Starting card import...');
+console.time('⏱️ Import duration');
+
+// 📖 Load scryfall-cards.json from persistent disk
+const filePath = path.join('/DatabaseDisk', 'scryfall-cards.json');
+let raw;
+
+try {
+  raw = fs.readFileSync(filePath, 'utf-8');
+} catch (err) {
+  console.error('❌ Failed to read scryfall-cards.json:', err.message);
+  process.exit(1);
+}
+
+let cards;
+try {
+  cards = JSON.parse(raw);
+  console.log(`🔍 Total cards parsed: ${cards.length}`);
+} catch (err) {
+  console.error('❌ Failed to parse scryfall-cards.json:', err.message);
+  process.exit(1);
+}
+
+// 🧠 Color map
+const colorMap = {
+  W: 'White',
+  U: 'Blue',
+  B: 'Black',
+  R: 'Red',
+  G: 'Green'
+};
+
+// 🛠️ Ensure cards table exists
 db.prepare(`
   CREATE TABLE IF NOT EXISTS cards (
     id TEXT PRIMARY KEY,
@@ -31,74 +61,84 @@ db.prepare(`
   )
 `).run();
 
+// 🛠️ Prepared insert statement
 const insert = db.prepare(`
   INSERT OR IGNORE INTO cards (id, name, image, color, type)
   VALUES (?, ?, ?, ?, ?)
 `);
 
-const colorMap = { W: 'White', U: 'Blue', B: 'Black', R: 'Red', G: 'Green' };
 const unsupportedLayouts = [
   'token', 'emblem', 'scheme', 'art_series', 'vanguard',
   'double_faced_token', 'augment', 'host', 'planar'
 ];
 
 const seenOracleIds = new Set();
-const stats = {
-  imported: 0, skipped: 0,
-  notEnglish: 0, notCommander: 0,
-  badLayout: 0, noImage: 0, duplicate: 0
+let imported = 0;
+let skipped = 0;
+let stats = {
+  noImage: 0,
+  notCommander: 0,
+  notEnglish: 0,
+  badLayout: 0,
+  duplicate: 0
 };
 
-console.log('🚀 Starting streaming import...');
+for (const card of cards) {
+  const isEnglish = card.lang === 'en';
+  const isCommanderLegal = card.legalities?.commander === 'legal';
+  const isLayoutSupported = !unsupportedLayouts.includes(card.layout);
+  const oracleId = card.oracle_id;
 
-const pipeline = chain([
-  fs.createReadStream(path.join(__dirname, 'scryfall-cards.json')),
-  parser(),
-  streamArray()
-]);
+  if (!isEnglish) { stats.notEnglish++; skipped++; continue; }
+  if (!isCommanderLegal) { stats.notCommander++; skipped++; continue; }
+  if (!isLayoutSupported) { stats.badLayout++; skipped++; continue; }
+  if (seenOracleIds.has(oracleId)) { stats.duplicate++; skipped++; continue; }
 
-pipeline.on('data', ({ value: card }) => {
-  try {
-    if (card.lang !== 'en') return stats.notEnglish++, stats.skipped++;
-    if (card.legalities?.commander !== 'legal') return stats.notCommander++, stats.skipped++;
-    if (unsupportedLayouts.includes(card.layout)) return stats.badLayout++, stats.skipped++;
-    if (seenOracleIds.has(card.oracle_id)) return stats.duplicate++, stats.skipped++;
+  const imageCandidate =
+    card.image_uris?.normal ||
+    card.card_faces?.[0]?.image_uris?.normal ||
+    null;
 
-    const image = card.image_uris?.normal || card.card_faces?.[0]?.image_uris?.normal || null;
-    if (!image || !image.startsWith('https://cards.scryfall.io/normal/')) {
-      return stats.noImage++, stats.skipped++;
-    }
+  const image = imageCandidate?.startsWith('https://cards.scryfall.io/normal/')
+    ? imageCandidate
+    : null;
 
-    const id = card.id;
-    const name = (card.name || '').trim();
-    const color = Array.isArray(card.color_identity)
-      ? card.color_identity.map(c => colorMap[c] || c).join(', ')
-      : null;
-    const type = card.type_line || null;
+  if (!image) { stats.noImage++; skipped++; continue; }
 
-    if (id && name) {
+  const id = card.id;
+  const name = (card.name || '').trim();
+  const color = Array.isArray(card.color_identity)
+    ? card.color_identity.map(c => colorMap[c] || c).join(', ')
+    : null;
+  const type = card.type_line || null;
+
+  if (id && name) {
+    try {
       insert.run(id, name, image, color, type);
-      seenOracleIds.add(card.oracle_id);
-      stats.imported++;
-      if (stats.imported % 500 === 0) {
-        console.log(`📦 Imported: ${stats.imported}`);
+      seenOracleIds.add(oracleId);
+      imported++;
+      if (imported % 500 === 0) {
+        console.log(`📦 Imported ${imported} cards so far...`);
       }
+    } catch (err) {
+      console.error(`❌ Failed to insert "${name}":`, err.message);
+      skipped++;
     }
-  } catch (err) {
-    stats.skipped++;
-    console.warn('⚠️ Error inserting card:', err.message);
+  } else {
+    skipped++;
   }
-});
+}
 
-pipeline.on('end', () => {
-  console.log(`\n✅ Imported: ${stats.imported.toLocaleString()} cards`);
-  console.log(`⚠️ Skipped: ${stats.skipped.toLocaleString()}`);
-  console.log(`   — ${stats.notEnglish} not in English`);
-  console.log(`   — ${stats.notCommander} not Commander-legal`);
-  console.log(`   — ${stats.badLayout} unsupported layout`);
-  console.log(`   — ${stats.noImage} missing image`);
-  console.log(`   — ${stats.duplicate} duplicate versions`);
-});
+console.timeEnd('⏱️ Import duration');
+console.log(`✅ Successfully imported: ${imported.toLocaleString()} unique English Commander-legal cards`);
+console.log(`⚠️ Skipped: ${skipped.toLocaleString()} total`);
+console.log(`   — ${stats.notEnglish} not in English`);
+console.log(`   — ${stats.notCommander} not Commander-legal`);
+console.log(`   — ${stats.badLayout} unsupported layout`);
+console.log(`   — ${stats.noImage} missing image`);
+console.log(`   — ${stats.duplicate} duplicate versions`);
+
+
 
 
 
