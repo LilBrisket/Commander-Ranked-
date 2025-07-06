@@ -111,11 +111,12 @@
       Loading cards...
     </div>
 
-    <div id="card-container" class="card-list"></div>
-
-    <!-- Fake scrollbar -->
-    <div id="fake-scrollbar-wrapper">
-      <div id="fake-scrollbar-thumb"></div>
+    <!-- ✅ Wrap scrollable area and fake scrollbar together -->
+    <div id="scroll-area-wrapper">
+      <div id="card-container" class="card-list"></div>
+      <div id="fake-scrollbar-wrapper">
+        <div id="fake-scrollbar-thumb"></div>
+      </div>
     </div>
 
     <button id="submit-ranking" disabled>Submit Ranking</button>
@@ -272,6 +273,7 @@
   </script>
 </body>
 </html>
+
 
 
 
