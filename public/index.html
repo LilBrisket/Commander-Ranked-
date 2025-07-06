@@ -56,6 +56,33 @@
       .arrow-labels span {
         font-size: 0.9rem;
       }
+
+      /* Fake scrollbar styles */
+      #fake-scrollbar-wrapper {
+        position: relative;
+        height: 16px;
+        margin-top: 0.5rem;
+        background: #ccc;
+        border-radius: 8px;
+        overflow: hidden;
+        width: 100%;
+      }
+
+      #fake-scrollbar-thumb {
+        height: 100%;
+        background: #000;
+        border-radius: 8px;
+        width: 25%;
+        position: absolute;
+        left: 0;
+        cursor: grab;
+        transition: background 0.2s ease;
+      }
+
+      #fake-scrollbar-thumb:active {
+        cursor: grabbing;
+        background: #444;
+      }
     }
   </style>
 </head>
@@ -85,6 +112,11 @@
     </div>
 
     <div id="card-container" class="card-list"></div>
+
+    <!-- Fake scrollbar -->
+    <div id="fake-scrollbar-wrapper">
+      <div id="fake-scrollbar-thumb"></div>
+    </div>
 
     <button id="submit-ranking" disabled>Submit Ranking</button>
   </main>
@@ -198,6 +230,45 @@
     window.addEventListener("DOMContentLoaded", () => {
       loadCards();
     });
+
+    // 🔁 Fake Scrollbar Logic
+    const cardContainer = document.getElementById("card-container");
+    const fakeScrollbar = document.getElementById("fake-scrollbar-wrapper");
+    const fakeThumb = document.getElementById("fake-scrollbar-thumb");
+
+    function syncFakeScrollbar() {
+      const ratio = cardContainer.scrollLeft / (cardContainer.scrollWidth - cardContainer.clientWidth);
+      const thumbLeft = ratio * (fakeScrollbar.clientWidth - fakeThumb.clientWidth);
+      fakeThumb.style.left = `${thumbLeft}px`;
+    }
+
+    cardContainer.addEventListener("scroll", syncFakeScrollbar);
+    window.addEventListener("resize", syncFakeScrollbar);
+
+    let isDragging = false;
+    let startX, scrollStart;
+
+    fakeThumb.addEventListener("mousedown", (e) => {
+      isDragging = true;
+      startX = e.clientX;
+      scrollStart = cardContainer.scrollLeft;
+      document.body.style.userSelect = "none";
+    });
+
+    window.addEventListener("mousemove", (e) => {
+      if (!isDragging) return;
+      const dx = e.clientX - startX;
+      const scrollRatio = (cardContainer.scrollWidth - cardContainer.clientWidth) / (fakeScrollbar.clientWidth - fakeThumb.clientWidth);
+      cardContainer.scrollLeft = scrollStart + dx * scrollRatio;
+    });
+
+    window.addEventListener("mouseup", () => {
+      isDragging = false;
+      document.body.style.userSelect = "";
+    });
+
+    const observer = new MutationObserver(syncFakeScrollbar);
+    observer.observe(cardContainer, { childList: true, subtree: true });
   </script>
 </body>
 </html>
