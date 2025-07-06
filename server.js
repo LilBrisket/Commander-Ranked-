@@ -4,7 +4,8 @@ const Database = require('better-sqlite3');
 const path = require('path');
 const fs = require('fs');
 
-const dbDirectory = process.env.RENDER_PERSISTENT_DIR || '/DatabaseDisk';
+// 👇 Use Render mount OR fallback to local file for local testing
+const dbDirectory = process.env.RENDER_PERSISTENT_DIR || '.';
 const dbPath = path.join(dbDirectory, 'cards.db');
 
 console.log('📂 Using database path:', dbPath);
@@ -12,7 +13,7 @@ console.log('📂 Using database path:', dbPath);
 // 🔒 Check if the database file exists
 if (!fs.existsSync(dbPath)) {
   console.error(`❌ Database file not found at: ${dbPath}`);
-  process.exit(1); // Exit early if DB is missing
+  process.exit(1);
 }
 
 const db = new Database(dbPath);
@@ -165,6 +166,7 @@ app.get('/api/leaderboard', (req, res) => {
 app.listen(PORT, () => {
   console.log(`🚀 Server running at http://localhost:${PORT}`);
 });
+
 
 
 
