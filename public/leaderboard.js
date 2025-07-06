@@ -27,7 +27,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   async function loadLeaderboard(page = 0) {
-    leaderboard.replaceChildren(); // safer than .innerHTML = ""
+    leaderboard.replaceChildren();
     const offset = page * limit;
     const { name, color, type, sort } = getFilters();
 
@@ -48,7 +48,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const result = await res.json();
       console.log("📊 Leaderboard response:", result);
 
-      const { total, cards } = result;
+      let { total, cards } = result;
 
       if (!Array.isArray(cards)) {
         leaderboard.innerHTML = "<li>Invalid leaderboard response format.</li>";
@@ -60,28 +60,44 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      cards.forEach((card, index) => {
-        const globalIndex = offset + index;
-        const rankNumber = sort === "asc"
-          ? total - globalIndex
-          : globalIndex + 1;
+      // Sort cards by points if not already sorted
+      cards.sort((a, b) => {
+        if (sort === "asc") return a.points - b.points;
+        return b.points - a.points;
+      });
 
+      // Tie-aware rank assignment
+      let lastPoints = null;
+      let lastRank = 0;
+      let skip = 0;
+
+      cards.forEach((card, i) => {
+        if (card.points === lastPoints) {
+          card.rank = lastRank;
+          skip++;
+        } else {
+          card.rank = i + 1;
+          lastRank = card.rank;
+          lastPoints = card.points;
+          if (skip > 0) lastRank += skip;
+          skip = 0;
+        }
+      });
+
+      cards.forEach(card => {
         const li = document.createElement("li");
         li.className = "card-entry";
 
-        // Rank Number
         const rankDiv = document.createElement("div");
         rankDiv.className = "card-rank";
-        rankDiv.textContent = `#${rankNumber}`;
+        rankDiv.textContent = `#${card.rank}`;
 
-        // Card Link
         const cardLink = document.createElement("a");
         cardLink.href = `https://scryfall.com/search?q=${encodeURIComponent(card.cardName || "")}`;
         cardLink.target = "_blank";
         cardLink.rel = "noopener noreferrer";
-        cardLink.className = "card-link"; // Recommended: style in CSS instead of inline
+        cardLink.className = "card-link";
 
-        // Card Image
         const img = document.createElement("img");
         img.src = card.cardImage || fallbackImage;
         img.alt = card.cardName || "Magic card";
@@ -91,17 +107,14 @@ document.addEventListener("DOMContentLoaded", () => {
           }
         };
 
-        // Name
         const nameDiv = document.createElement("div");
         nameDiv.className = "card-name";
         nameDiv.textContent = card.cardName || "Unknown";
 
-        // Points
         const pointsDiv = document.createElement("div");
         pointsDiv.className = "card-points";
         pointsDiv.textContent = `${card.points} pts`;
 
-        // Assemble
         li.appendChild(rankDiv);
         cardLink.appendChild(img);
         cardLink.appendChild(nameDiv);
@@ -120,7 +133,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // Pagination
   prevBtn?.addEventListener("click", () => {
     if (currentPage > 0) {
       currentPage--;
@@ -133,7 +145,6 @@ document.addEventListener("DOMContentLoaded", () => {
     loadLeaderboard(currentPage);
   });
 
-  // Filters
   filterForm?.addEventListener("submit", e => {
     e.preventDefault();
     currentPage = 0;
@@ -149,7 +160,6 @@ document.addEventListener("DOMContentLoaded", () => {
     loadLeaderboard(currentPage);
   });
 
-  // Initial load
   loadLeaderboard(currentPage);
 });
 
