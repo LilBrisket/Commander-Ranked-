@@ -66,20 +66,24 @@ document.addEventListener("DOMContentLoaded", () => {
         return b.points - a.points;
       });
 
-      // Tie-aware rank assignment
+      // ✅ Tie-aware rank assignment with optional reversed ranks
       let lastPoints = null;
       let lastRank = 0;
       let skip = 0;
+      const baseRank = sort === "asc" ? total - offset : 1;
+      const increment = sort === "asc" ? -1 : 1;
 
       cards.forEach((card, i) => {
+        const position = i;
+        const currentRank = baseRank + (position * increment);
         if (card.points === lastPoints) {
           card.rank = lastRank;
           skip++;
         } else {
-          card.rank = i + 1;
-          lastRank = card.rank;
+          card.rank = currentRank;
+          lastRank = currentRank;
           lastPoints = card.points;
-          if (skip > 0) lastRank += skip;
+          if (skip > 0) lastRank += skip * increment;
           skip = 0;
         }
       });
@@ -162,6 +166,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   loadLeaderboard(currentPage);
 });
+
 
 
 
