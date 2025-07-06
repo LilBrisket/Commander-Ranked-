@@ -4,9 +4,13 @@ const Database = require('better-sqlite3');
 const path = require('path');
 const fs = require('fs');
 
-// 👇 Use Render mount OR fallback to local file for local testing
-const dbDirectory = process.env.RENDER_PERSISTENT_DIR || '.';
-const dbPath = path.join(dbDirectory, 'cards.db');
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// ✅ Prefer DATABASE_PATH (for overrides), then RENDER_PERSISTENT_DIR, then local fallback
+const dbPath =
+  process.env.DATABASE_PATH ||
+  (process.env.RENDER_PERSISTENT_DIR ? path.join(process.env.RENDER_PERSISTENT_DIR, 'cards.db') : path.join('.', 'cards.db'));
 
 console.log('📂 Using database path:', dbPath);
 
@@ -31,9 +35,6 @@ db.prepare(`
     type TEXT
   )
 `).run();
-
-const app = express();
-const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json());
@@ -166,6 +167,7 @@ app.get('/api/leaderboard', (req, res) => {
 app.listen(PORT, () => {
   console.log(`🚀 Server running at http://localhost:${PORT}`);
 });
+
 
 
 
