@@ -120,6 +120,9 @@
     </div>
 
     <button id="submit-ranking" disabled>Submit Ranking</button>
+
+    <!-- ✅ Ranking count moved below submit button -->
+    <div id="ranking-count" style="margin: 1rem 1rem 0; text-align: center; color: #000;"></div>
   </main>
 
   <footer class="footer">
@@ -195,6 +198,20 @@
       }
     }
 
+    function updateRankingCount() {
+      fetch('/api/stats')
+        .then(res => res.json())
+        .then(data => {
+          const countDiv = document.getElementById('ranking-count');
+          if (countDiv && data.totalRankings >= 0) {
+            countDiv.textContent = ` ${data.totalRankings.toLocaleString()} total rankings submitted`;
+          }
+        })
+        .catch(err => {
+          console.error('❌ Failed to load ranking stats:', err);
+        });
+    }
+
     document.getElementById("submit-ranking").addEventListener("click", async () => {
       const container = document.getElementById("card-container");
       const items = Array.from(container.children);
@@ -225,11 +242,13 @@
       });
 
       document.getElementById("submit-ranking").disabled = true;
+      updateRankingCount(); // ✅ Refresh count after submission
       loadCards();
     });
 
     window.addEventListener("DOMContentLoaded", () => {
       loadCards();
+      updateRankingCount();
     });
 
     // 🔁 Fake Scrollbar Logic
@@ -273,6 +292,10 @@
   </script>
 </body>
 </html>
+
+
+
+
 
 
 

@@ -13,6 +13,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const sortSelect = document.getElementById("filter-sort");
   const filterForm = document.getElementById("filter-form");
   const clearFiltersBtn = document.getElementById("clear-filters");
+  const resultCount = document.getElementById("result-count"); // ✅ new line
 
   let currentPage = 0;
   const limit = 20;
@@ -57,7 +58,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (cards.length === 0) {
         leaderboard.innerHTML = "<li>No cards found. Try clearing filters or reseeding.</li>";
+        if (resultCount) resultCount.textContent = "Showing 0 results"; // ✅ also added here
         return;
+      }
+
+      // ✅ Set result count
+      if (resultCount) {
+        resultCount.textContent = `Showing ${total.toLocaleString()} result${total !== 1 ? "s" : ""}`;
       }
 
       // Sort cards by points if not already sorted
@@ -166,6 +173,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   loadLeaderboard(currentPage);
 });
+
 
 
 

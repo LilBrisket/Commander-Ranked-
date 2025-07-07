@@ -61,6 +61,53 @@
         color: #000;
       }
     }
+
+    /* Flip card styles */
+    .card-item {
+      perspective: 1000px;
+      cursor: pointer;
+    }
+    .card-wrapper {
+      width: 223px; /* fixed width or adjust as needed */
+      margin: 0.5rem auto;
+      text-align: center;
+    }
+    .card-flipper {
+      position: relative;
+      width: 100%;
+      height: 310px;
+      transition: transform 0.6s;
+      transform-style: preserve-3d;
+    }
+    .card-flipper.flipped {
+      transform: rotateY(180deg);
+    }
+    .card-image {
+      width: 100%;
+      height: 310px;
+      backface-visibility: hidden;
+      border-radius: 6px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      object-fit: cover;
+      display: block;
+    }
+    .card-back {
+      position: absolute;
+      top: 0;
+      left: 0;
+      transform: rotateY(180deg);
+    }
+    .card-name {
+      margin-top: 0.4rem;
+      font-weight: 600;
+      font-size: 1rem;
+      color: #111;
+      text-decoration: none;
+      display: block;
+    }
+    .card-name:hover {
+      text-decoration: underline;
+    }
   </style>
 </head>
 <body class="leaderboard-page">
@@ -111,6 +158,9 @@
       </div>
     </form>
 
+    <!-- Only change made: result count paragraph -->
+    <p id="result-count"></p>
+
     <!-- 🏆 Leaderboard results -->
     <ul id="leaderboard" class="card-list"></ul>
 
@@ -128,8 +178,75 @@
   </footer>
 
   <script src="leaderboard.js"></script>
+  <script>
+
+    function createCardElement(card) {
+      const cardDiv = document.createElement("li");
+      cardDiv.className = "card-entry";
+      cardDiv.dataset.id = card.cardId;
+
+      const rankDiv = document.createElement("div");
+      rankDiv.className = "card-rank";
+      rankDiv.textContent = `#${card.rank}`;
+
+      const cardLink = document.createElement("a");
+      cardLink.href = `https://scryfall.com/search?q=${encodeURIComponent(card.cardName || "")}`;
+      cardLink.target = "_blank";
+      cardLink.rel = "noopener noreferrer";
+      cardLink.className = "card-link";
+
+      // Flipper container
+      const flipper = document.createElement("div");
+      flipper.className = "card-flipper";
+
+      // Front image
+      const front = document.createElement("img");
+      front.className = "card-image card-front";
+      front.alt = card.cardName || "";
+      if (card.cardImage && card.cardImage.includes("/normal/")) {
+        front.src = card.cardImage.replace("/normal/", "/large/");
+      } else if (card.cardImage) {
+        front.src = card.cardImage;
+      } else {
+        front.src = fallbackImage;
+      }
+
+      // Back image (for double-sided)
+      const back = document.createElement("img");
+      back.className = "card-image card-back";
+      back.alt = `${card.cardName || ""} (Back Side)`;
+      if (card.cardImageBack && card.cardImageBack.includes("/normal/")) {
+        back.src = card.cardImageBack.replace("/normal/", "/large/");
+      } else {
+        back.src = fallbackImage;
+        back.style.display = "none"; // hide back if no back image
+      }
+
+      flipper.appendChild(front);
+      flipper.appendChild(back);
+
+      // Flip on click
+      flipper.addEventListener("click", () => {
+        flipper.classList.toggle("flipped");
+      });
+
+      cardLink.appendChild(flipper);
+
+      const pointsDiv = document.createElement("div");
+      pointsDiv.className = "card-points";
+      pointsDiv.textContent = `${card.points} pts`;
+
+      cardDiv.appendChild(rankDiv);
+      cardDiv.appendChild(cardLink);
+      cardDiv.appendChild(pointsDiv);
+
+      return cardDiv;
+    }
+  </script>
 </body>
 </html>
+
+
 
 
 

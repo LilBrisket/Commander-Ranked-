@@ -480,7 +480,6 @@ a {
     margin-top: 0.5rem;
   }
 
-  /* 🆕 Fake Scrollbar Styling */
   #fake-scrollbar-wrapper {
     position: relative;
     height: 16px;
@@ -508,7 +507,6 @@ a {
   }
 }
 
-/* ✅ Overlay Fake Scrollbar on Top of Real One */
 @media (max-width: 600px) {
   #scroll-area-wrapper {
     position: relative;
@@ -527,6 +525,44 @@ a {
     pointer-events: auto;
   }
 }
+
+/* 🎴 Flip Card Styles (Added) */
+.card-flipper {
+  position: relative;
+  perspective: 1000px;
+  width: 100%;
+  height: 310px;
+  transition: transform 0.6s;
+  transform-style: preserve-3d;
+  cursor: pointer;
+}
+
+.card-flipper.flipped {
+  transform: rotateY(180deg);
+}
+
+.card-front,
+.card-back {
+  width: 100%;
+  height: 310px;
+  backface-visibility: hidden;
+  position: absolute;
+  top: 0;
+  left: 0;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+  object-fit: contain;
+}
+
+.card-front {
+  z-index: 2;
+  transform: rotateY(0deg);
+}
+
+.card-back {
+  transform: rotateY(180deg);
+}
+
 
 
 

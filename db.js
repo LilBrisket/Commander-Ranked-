@@ -4,23 +4,18 @@ const fs = require('fs');
 const path = require('path');
 const Database = require('better-sqlite3');
 
-// ✅ Use persistent directory on Render if available
 const dbDirectory = process.env.RENDER_PERSISTENT_DIR || path.join(__dirname, 'DatabaseDisk');
 
-// 📁 Ensure the directory exists
 if (!fs.existsSync(dbDirectory)) {
   fs.mkdirSync(dbDirectory, { recursive: true });
 }
 
-// 📂 Full path to cards.db
 const dbPath = path.join(dbDirectory, 'cards.db');
 console.log('📂 Using database path:', dbPath);
 
-// 🛠️ Connect to database
 const db = new Database(dbPath);
 db.pragma('journal_mode = WAL');
 
-// 🧱 Create table if it doesn't exist
 db.prepare(`
   CREATE TABLE IF NOT EXISTS cards (
     id TEXT PRIMARY KEY,
@@ -33,6 +28,12 @@ db.prepare(`
   )
 `).run();
 
+// ✅ Add indexes for faster filtering & sorting
+db.prepare(`CREATE INDEX IF NOT EXISTS idx_points ON cards(points)`).run();
+db.prepare(`CREATE INDEX IF NOT EXISTS idx_name ON cards(name)`).run();
+db.prepare(`CREATE INDEX IF NOT EXISTS idx_color ON cards(color)`).run();
+db.prepare(`CREATE INDEX IF NOT EXISTS idx_type ON cards(type)`).run();
+
 // 🎨 Color identity mapping
 const colorMap = {
   W: 'White',
@@ -42,7 +43,6 @@ const colorMap = {
   G: 'Green',
 };
 
-// 🌱 Seed Scryfall cards if table is empty
 function seedCardsFromScryfall() {
   try {
     const raw = fs.readFileSync(path.join(__dirname, 'scryfall-cards.json'), 'utf-8');
@@ -58,7 +58,6 @@ function seedCardsFromScryfall() {
     for (const card of scryfallCards) {
       const id = card.id;
       const name = (card.name || '').trim();
-
       const imageCandidate =
         card.image_uris?.normal ||
         card.card_faces?.[0]?.image_uris?.normal ||
@@ -91,7 +90,6 @@ function seedCardsFromScryfall() {
   }
 }
 
-// 🔍 Check if seeding is needed
 try {
   const existing = db.prepare(`SELECT COUNT(*) AS count FROM cards`).get();
 
@@ -105,4 +103,5 @@ try {
 }
 
 module.exports = db;
+
 

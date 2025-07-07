@@ -36,6 +36,14 @@ db.prepare(`
   )
 `).run();
 
+// 🧱 Ensure meta table exists for global stats
+db.prepare(`
+  CREATE TABLE IF NOT EXISTS meta (
+    key TEXT PRIMARY KEY,
+    value INTEGER DEFAULT 0
+  )
+`).run();
+
 app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
@@ -66,18 +74,36 @@ app.get('/api/cards/random', (req, res) => {
 app.post('/api/rankings', (req, res) => {
   const { ranking } = req.body;
 
-  if (
-    !Array.isArray(ranking) ||
-    ranking.length !== 4 ||
-    !ranking.every(r => r.id && typeof r.score === 'number')
-  ) {
-    return res.status(400).json({ error: 'Invalid ranking format. Must be array of { id, score } objects.' });
+  if (!Array.isArray(ranking)) {
+    return res.status(400).json({ error: "Ranking must be an array." });
   }
 
+  if (ranking.length !== 4) {
+    return res.status(400).json({ error: "Ranking must contain exactly 4 cards." });
+  }
+
+  for (let i = 0; i < ranking.length; i++) {
+    const entry = ranking[i];
+    if (!entry || typeof entry !== 'object') {
+      return res.status(400).json({ error: `Entry at index ${i} is not a valid object.` });
+    }
+
+    if (typeof entry.id !== 'string' || !entry.id.trim()) {
+      return res.status(400).json({ error: `Entry at index ${i} is missing a valid 'id'.` });
+    }
+
+    if (typeof entry.score !== 'number' || isNaN(entry.score)) {
+      return res.status(400).json({ error: `Entry at index ${i} is missing a valid 'score' number.` });
+    }
+  }
+
+  // ✅ Updated to increment seen
   const stmt = db.prepare(`
-    INSERT INTO cards (id, name, points)
-    VALUES (?, ?, ?)
-    ON CONFLICT(id) DO UPDATE SET points = points + excluded.points
+    INSERT INTO cards (id, name, points, seen)
+    VALUES (?, ?, ?, 1)
+    ON CONFLICT(id) DO UPDATE SET 
+      points = points + excluded.points,
+      seen = seen + 1
   `);
 
   console.log('📩 Received ranking:', ranking);
@@ -95,6 +121,13 @@ app.post('/api/rankings', (req, res) => {
       console.error(`❌ Error updating card ${id}:`, err.message);
     }
   }
+
+  // ✅ Keep meta total increment (optional)
+  db.prepare(`
+    INSERT INTO meta (key, value)
+    VALUES ('rankings_submitted', 1)
+    ON CONFLICT(key) DO UPDATE SET value = value + 1
+  `).run();
 
   res.json({ message: 'Thanks for ranking!' });
 });
@@ -164,9 +197,25 @@ app.get('/api/leaderboard', (req, res) => {
   }
 });
 
+// 📊 ✅ Updated to use SUM(seen) from cards
+app.get('/api/stats', (req, res) => {
+  try {
+    const { total } = db.prepare(`SELECT SUM(seen) as total FROM cards`).get();
+    res.json({ totalRankings: total || 0 });
+  } catch (err) {
+    console.error('❌ Failed to fetch stats:', err);
+    res.status(500).json({ error: 'Failed to get stats.' });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`🚀 Server running at http://localhost:${PORT}`);
 });
+
+
+
+
+
 
 
 

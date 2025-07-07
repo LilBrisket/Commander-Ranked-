@@ -3,6 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 const Database = require('better-sqlite3');
+const schema = require('./dbSchema'); // ✅ Use shared schema logic
 
 // ✅ Use correct persistent path for Render
 const dbPath = process.env.DATABASE_PATH || '/DatabaseDisk/cards.db';
@@ -15,6 +16,8 @@ if (!fs.existsSync(dbPath)) {
 
 const db = new Database(dbPath);
 db.pragma('journal_mode = WAL');
+
+schema.ensureCardsTable(db); // ✅ Ensure table using shared schema
 
 console.log('🚀 Starting card import...');
 console.time('⏱️ Import duration');
@@ -47,19 +50,6 @@ const colorMap = {
   R: 'Red',
   G: 'Green'
 };
-
-// 🛠️ Ensure cards table exists
-db.prepare(`
-  CREATE TABLE IF NOT EXISTS cards (
-    id TEXT PRIMARY KEY,
-    name TEXT,
-    image TEXT,
-    points INTEGER DEFAULT 0,
-    seen INTEGER DEFAULT 0,
-    color TEXT,
-    type TEXT
-  )
-`).run();
 
 // 🛠️ Prepared insert statement
 const insert = db.prepare(`
@@ -137,6 +127,7 @@ console.log(`   — ${stats.notCommander} not Commander-legal`);
 console.log(`   — ${stats.badLayout} unsupported layout`);
 console.log(`   — ${stats.noImage} missing image`);
 console.log(`   — ${stats.duplicate} duplicate versions`);
+
 
 
 
