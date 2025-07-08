@@ -198,8 +198,12 @@ app.get('/api/leaderboard', (req, res) => {
 // 📊 ✅ Updated to use SUM(seen) from cards
 app.get('/api/stats', (req, res) => {
   try {
-    const { total } = db.prepare(`SELECT SUM(seen) as total FROM cards`).get();
-    res.json({ totalRankings: total || 0 });
+    // Fetch the value of 'rankings_submitted' from the meta table
+    const { value } = db.prepare(`
+      SELECT value FROM meta WHERE key = 'rankings_submitted'
+    `).get();
+
+    res.json({ totalRankings: value || 0 });
   } catch (err) {
     console.error('❌ Failed to fetch stats:', err);
     res.status(500).json({ error: 'Failed to get stats.' });
@@ -209,6 +213,7 @@ app.get('/api/stats', (req, res) => {
 app.listen(PORT, () => {
   console.log(`🚀 Server running at http://localhost:${PORT}`);
 });
+
 
 
 
