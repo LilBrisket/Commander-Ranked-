@@ -92,7 +92,7 @@
   <nav class="nav-banner" role="navigation">
     <a href="/index.html">Rank These Cards</a>
     <a href="/leaderboard.html">Leaderboard</a>
-    <a href="/rules.html">Rank Your Own Deck</a>
+    <a href="/rank-your-deck.html">Rank Your Own Deck</a> <!-- This is the new link -->
     <a href="/about.html">About</a>
   </nav>
 
@@ -204,7 +204,7 @@
         .then(data => {
           const countDiv = document.getElementById('ranking-count');
           if (countDiv && data.totalRankings >= 0) {
-            countDiv.textContent = ` ${data.totalRankings.toLocaleString()} total rankings submitted`;
+            countDiv.textContent = ` ${data.totalRankings.toLocaleString()} Total Cards Rankings Submitted`;
           }
         })
         .catch(err => {
@@ -292,6 +292,7 @@
   </script>
 </body>
 </html>
+
 
 
 
