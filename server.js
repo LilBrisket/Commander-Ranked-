@@ -7,10 +7,8 @@ const fs = require('fs');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// ✅ Prefer DATABASE_PATH (for overrides), then RENDER_PERSISTENT_DIR, then local fallback
-const dbPath =
-  process.env.DATABASE_PATH ||
-  (process.env.RENDER_PERSISTENT_DIR ? path.join(process.env.RENDER_PERSISTENT_DIR, 'cards.db') : path.join('.', 'cards.db'));
+// ✅ Update the database path to the persistent disk
+const dbPath = '/DatabaseDisk/cards.db';  // Updated path
 
 console.log('📂 Using database path:', dbPath);
 
@@ -211,6 +209,7 @@ app.get('/api/stats', (req, res) => {
 app.listen(PORT, () => {
   console.log(`🚀 Server running at http://localhost:${PORT}`);
 });
+
 
 
 
