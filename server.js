@@ -123,8 +123,8 @@ app.post('/api/rankings', (req, res) => {
   // ✅ Keep meta total increment (optional)
   db.prepare(`
     INSERT INTO meta (key, value)
-    VALUES ('rankings_submitted', 1)
-    ON CONFLICT(key) DO UPDATE SET value = value + 1
+    VALUES ('rankings_submitted', 4)
+    ON CONFLICT(key) DO UPDATE SET value = value + 4
   `).run();
 
   res.json({ message: 'Thanks for ranking!' });
