@@ -6,6 +6,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const leaderboard = document.getElementById("leaderboard");
   const prevBtn = document.getElementById("prev-btn");
   const nextBtn = document.getElementById("next-btn");
+  const jumpBtn = document.getElementById("jump-btn");
+  const jumpInput = document.getElementById("jump-page");
+  const pageDisplay = document.getElementById("page-number");
 
   const nameInput = document.getElementById("filter-name");
   const colorSelect = document.getElementById("filter-color");
@@ -13,9 +16,11 @@ document.addEventListener("DOMContentLoaded", () => {
   const sortSelect = document.getElementById("filter-sort");
   const filterForm = document.getElementById("filter-form");
   const clearFiltersBtn = document.getElementById("clear-filters");
-  const resultCount = document.getElementById("result-count"); // ✅ new line
+  const resultCount = document.getElementById("result-count");
 
   let currentPage = 0;
+  let totalPages = 1;
+  let totalItems = 0;
   const limit = 20;
 
   function getFilters() {
@@ -49,7 +54,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const result = await res.json();
       console.log("📊 Leaderboard response:", result);
 
-      let { total, cards } = result;
+      const { total, cards } = result;
 
       if (!Array.isArray(cards)) {
         leaderboard.innerHTML = "<li>Invalid leaderboard response format.</li>";
@@ -58,42 +63,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (cards.length === 0) {
         leaderboard.innerHTML = "<li>No cards found. Try clearing filters or reseeding.</li>";
-        if (resultCount) resultCount.textContent = "Showing 0 results"; // ✅ also added here
+        if (resultCount) resultCount.textContent = "Showing 0 results";
         return;
       }
 
-      // ✅ Set result count
       if (resultCount) {
         resultCount.textContent = `Showing ${total.toLocaleString()} result${total !== 1 ? "s" : ""}`;
       }
 
-      // Sort cards by points if not already sorted
-      cards.sort((a, b) => {
-        if (sort === "asc") return a.points - b.points;
-        return b.points - a.points;
-      });
+      totalItems = total;
+      totalPages = Math.ceil(total / limit);
 
-      // ✅ Tie-aware rank assignment with optional reversed ranks
-      let lastPoints = null;
-      let lastRank = 0;
-      let skip = 0;
-      const baseRank = sort === "asc" ? total - offset : 1;
-      const increment = sort === "asc" ? -1 : 1;
-
-      cards.forEach((card, i) => {
-        const position = i;
-        const currentRank = baseRank + (position * increment);
-        if (card.points === lastPoints) {
-          card.rank = lastRank;
-          skip++;
-        } else {
-          card.rank = currentRank;
-          lastRank = currentRank;
-          lastPoints = card.points;
-          if (skip > 0) lastRank += skip * increment;
-          skip = 0;
-        }
-      });
+      if (pageDisplay) {
+        pageDisplay.textContent = `Page ${currentPage + 1} of ${totalPages}`;
+      }
 
       cards.forEach(card => {
         const li = document.createElement("li");
@@ -134,8 +117,9 @@ document.addEventListener("DOMContentLoaded", () => {
         leaderboard.appendChild(li);
       });
 
-      prevBtn.disabled = page === 0;
-      nextBtn.disabled = cards.length < limit;
+      prevBtn.disabled = page <= 0;
+      nextBtn.disabled = page >= totalPages - 1;
+
     } catch (err) {
       console.error("❌ Error fetching leaderboard:", err);
       leaderboard.innerHTML = "<li>Error loading leaderboard</li>";
@@ -152,7 +136,19 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   nextBtn?.addEventListener("click", () => {
-    currentPage++;
+    if (currentPage < totalPages - 1) {
+      currentPage++;
+      loadLeaderboard(currentPage);
+    }
+  });
+
+  jumpBtn?.addEventListener("click", () => {
+    const pageNum = parseInt(jumpInput.value, 10);
+    if (isNaN(pageNum) || pageNum < 1 || pageNum > totalPages) {
+      alert(`Please enter a page number between 1 and ${totalPages}`);
+      return;
+    }
+    currentPage = pageNum - 1;
     loadLeaderboard(currentPage);
   });
 
@@ -173,6 +169,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
   loadLeaderboard(currentPage);
 });
+
+
+
+
+
+
 
 
 

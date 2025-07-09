@@ -204,7 +204,7 @@
         .then(data => {
           const countDiv = document.getElementById('ranking-count');
           if (countDiv && data.totalRankings >= 0) {
-            countDiv.textContent = ` ${data.totalRankings.toLocaleString()} Total Cards Rankings Submitted`;
+            countDiv.textContent = ` ${data.totalRankings.toLocaleString()} Total Card Rankings Submitted`;
           }
         })
         .catch(err => {

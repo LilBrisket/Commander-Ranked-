@@ -7,12 +7,9 @@ const fs = require('fs');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// ✅ Update the database path to the persistent disk
-const dbPath = '/DatabaseDisk/cards.db';  // Updated path
-
+const dbPath = '/DatabaseDisk/cards.db';
 console.log('📂 Using database path:', dbPath);
 
-// 🔒 Check if the database file exists
 if (!fs.existsSync(dbPath)) {
   console.error(`❌ Database file not found at: ${dbPath}`);
   process.exit(1);
@@ -21,7 +18,6 @@ if (!fs.existsSync(dbPath)) {
 const db = new Database(dbPath);
 db.pragma('journal_mode = WAL');
 
-// ✅ Ensure the cards table exists
 db.prepare(`
   CREATE TABLE IF NOT EXISTS cards (
     id TEXT PRIMARY KEY,
@@ -34,7 +30,6 @@ db.prepare(`
   )
 `).run();
 
-// 🧱 Ensure meta table exists for global stats
 db.prepare(`
   CREATE TABLE IF NOT EXISTS meta (
     key TEXT PRIMARY KEY,
@@ -46,7 +41,6 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
 
-// 🔀 Get 4 random cards
 app.get('/api/cards/random', (req, res) => {
   try {
     const cards = db.prepare(`
@@ -68,34 +62,13 @@ app.get('/api/cards/random', (req, res) => {
   }
 });
 
-// 🧮 Accept ranking and apply custom points
 app.post('/api/rankings', (req, res) => {
   const { ranking } = req.body;
 
-  if (!Array.isArray(ranking)) {
-    return res.status(400).json({ error: "Ranking must be an array." });
+  if (!Array.isArray(ranking) || ranking.length !== 4) {
+    return res.status(400).json({ error: "Ranking must be an array of 4 cards." });
   }
 
-  if (ranking.length !== 4) {
-    return res.status(400).json({ error: "Ranking must contain exactly 4 cards." });
-  }
-
-  for (let i = 0; i < ranking.length; i++) {
-    const entry = ranking[i];
-    if (!entry || typeof entry !== 'object') {
-      return res.status(400).json({ error: `Entry at index ${i} is not a valid object.` });
-    }
-
-    if (typeof entry.id !== 'string' || !entry.id.trim()) {
-      return res.status(400).json({ error: `Entry at index ${i} is missing a valid 'id'.` });
-    }
-
-    if (typeof entry.score !== 'number' || isNaN(entry.score)) {
-      return res.status(400).json({ error: `Entry at index ${i} is missing a valid 'score' number.` });
-    }
-  }
-
-  // ✅ Updated to increment seen
   const stmt = db.prepare(`
     INSERT INTO cards (id, name, points, seen)
     VALUES (?, ?, ?, 1)
@@ -120,7 +93,6 @@ app.post('/api/rankings', (req, res) => {
     }
   }
 
-  // ✅ Keep meta total increment (optional)
   db.prepare(`
     INSERT INTO meta (key, value)
     VALUES ('rankings_submitted', 4)
@@ -130,7 +102,6 @@ app.post('/api/rankings', (req, res) => {
   res.json({ message: 'Thanks for ranking!' });
 });
 
-// 🏆 Leaderboard with filtering, pagination, and sorting
 app.get('/api/leaderboard', (req, res) => {
   try {
     const maxLimit = 30000;
@@ -140,7 +111,7 @@ app.get('/api/leaderboard', (req, res) => {
     const name = req.query.name?.trim();
     const color = req.query.color?.trim();
     const type = req.query.type?.trim();
-    const sort = req.query.sort?.trim().toLowerCase(); // asc or desc
+    const sort = req.query.sort?.trim().toLowerCase();
 
     let whereClause = `WHERE points != 0 AND image IS NOT NULL AND image != ''`;
     const filters = [];
@@ -176,14 +147,43 @@ app.get('/api/leaderboard', (req, res) => {
     const { total } = db.prepare(countQuery).get(...values);
 
     const sortOrder = sort === 'asc' ? 'ASC' : 'DESC';
+
     const dataQuery = `
       SELECT id AS cardId, name AS cardName, image AS cardImage, points
       FROM cards
       ${whereClause}
       ORDER BY points ${sortOrder}
-      LIMIT ? OFFSET ?
     `;
-    const paginatedCards = db.prepare(dataQuery).all(...values, limit, offset);
+    const allCards = db.prepare(dataQuery).all(...values);
+
+    // ✅ competition ranking logic with ascending counting down
+    let rank = (sort === 'asc') ? total : 1;
+    let lastPoints = null;
+    let lastRank = rank;
+    let tieCount = 0;
+
+    allCards.forEach((card, index) => {
+      if (index === 0) {
+        card.rank = rank;
+      } else {
+        if (card.points === lastPoints) {
+          card.rank = lastRank; // tie
+          tieCount++;
+        } else {
+          if (sort === 'asc') {
+            rank -= (tieCount + 1);
+          } else {
+            rank += (tieCount + 1);
+          }
+          card.rank = rank;
+          lastRank = rank;
+          tieCount = 0;
+        }
+      }
+      lastPoints = card.points;
+    });
+
+    const paginatedCards = allCards.slice(offset, offset + limit);
 
     res.json({
       total,
@@ -195,15 +195,11 @@ app.get('/api/leaderboard', (req, res) => {
   }
 });
 
-// 📊 ✅ Updated to use SUM(seen) from cards
 app.get('/api/stats', (req, res) => {
   try {
-    // Fetch the value of 'rankings_submitted' from the meta table
-    const { value } = db.prepare(`
-      SELECT value FROM meta WHERE key = 'rankings_submitted'
-    `).get();
-
-    res.json({ totalRankings: value || 0 });
+    const row = db.prepare(`SELECT value FROM meta WHERE key = 'rankings_submitted'`).get();
+    const value = row ? row.value : 0;
+    res.json({ totalRankings: value });
   } catch (err) {
     console.error('❌ Failed to fetch stats:', err);
     res.status(500).json({ error: 'Failed to get stats.' });
@@ -213,6 +209,13 @@ app.get('/api/stats', (req, res) => {
 app.listen(PORT, () => {
   console.log(`🚀 Server running at http://localhost:${PORT}`);
 });
+
+
+
+
+
+
+
 
 
 

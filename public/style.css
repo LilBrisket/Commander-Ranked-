@@ -208,8 +208,9 @@ a {
 /* 🏷️ Card Name Styling */
 .card-name {
   margin-top: 0.5rem;
+  font-family: 'Inter', sans-serif;
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: 1rem;
   text-align: center;
 }
 
@@ -271,7 +272,7 @@ a {
   background: #eee;
   font-size: 1rem;
   font-weight: 600;
-  color: #555;
+  color: #000;
 }
 
 .footer a {
