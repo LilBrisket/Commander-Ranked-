@@ -1,11 +1,8 @@
-// import-cards.js
-
 const fs = require('fs');
 const path = require('path');
 const Database = require('better-sqlite3');
-const schema = require('./dbSchema'); // ✅ Use shared schema logic
+const schema = require('./dbSchema');
 
-// ✅ Use correct persistent path for Render
 const dbPath = process.env.DATABASE_PATH || '/DatabaseDisk/cards.db';
 console.log('📂 Using database path:', dbPath);
 
@@ -17,12 +14,11 @@ if (!fs.existsSync(dbPath)) {
 const db = new Database(dbPath);
 db.pragma('journal_mode = WAL');
 
-schema.ensureCardsTable(db); // ✅ Ensure table using shared schema
+schema.ensureCardsTable(db);
 
 console.log('🚀 Starting card import...');
 console.time('⏱️ Import duration');
 
-// 📖 Load scryfall-cards.json from persistent disk
 const filePath = path.join('/DatabaseDisk', 'scryfall-cards.json');
 let raw;
 
@@ -42,7 +38,6 @@ try {
   process.exit(1);
 }
 
-// 🧠 Color map
 const colorMap = {
   W: 'White',
   U: 'Blue',
@@ -51,10 +46,9 @@ const colorMap = {
   G: 'Green'
 };
 
-// 🛠️ Prepared insert statement
 const insert = db.prepare(`
-  INSERT OR IGNORE INTO cards (id, name, image, color, type)
-  VALUES (?, ?, ?, ?, ?)
+  INSERT OR IGNORE INTO cards (id, name, image, image_back, color, type)
+  VALUES (?, ?, ?, ?, ?, ?)
 `);
 
 const unsupportedLayouts = [
@@ -84,13 +78,16 @@ for (const card of cards) {
   if (!isLayoutSupported) { stats.badLayout++; skipped++; continue; }
   if (seenOracleIds.has(oracleId)) { stats.duplicate++; skipped++; continue; }
 
-  const imageCandidate =
+  const imageFront =
     card.image_uris?.normal ||
     card.card_faces?.[0]?.image_uris?.normal ||
     null;
 
-  const image = imageCandidate?.startsWith('https://cards.scryfall.io/normal/')
-    ? imageCandidate
+  const imageBack =
+    card.card_faces?.[1]?.image_uris?.normal || null;
+
+  const image = imageFront?.startsWith('https://cards.scryfall.io/normal/')
+    ? imageFront
     : null;
 
   if (!image) { stats.noImage++; skipped++; continue; }
@@ -104,7 +101,7 @@ for (const card of cards) {
 
   if (id && name) {
     try {
-      insert.run(id, name, image, color, type);
+      insert.run(id, name, image, imageBack, color, type);
       seenOracleIds.add(oracleId);
       imported++;
       if (imported % 500 === 0) {
@@ -127,6 +124,7 @@ console.log(`   — ${stats.notCommander} not Commander-legal`);
 console.log(`   — ${stats.badLayout} unsupported layout`);
 console.log(`   — ${stats.noImage} missing image`);
 console.log(`   — ${stats.duplicate} duplicate versions`);
+
 
 
 

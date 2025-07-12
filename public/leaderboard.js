@@ -95,6 +95,11 @@ document.addEventListener("DOMContentLoaded", () => {
         const img = document.createElement("img");
         img.src = card.cardImage || fallbackImage;
         img.alt = card.cardName || "Magic card";
+        img.className = "card";
+        img.dataset.front = card.cardImage || fallbackImage;
+        if (card.cardImageBack) {
+          img.dataset.back = card.cardImageBack;
+        }
         img.onerror = function () {
           if (this.src !== fallbackImage) {
             this.src = fallbackImage;
@@ -113,6 +118,23 @@ document.addEventListener("DOMContentLoaded", () => {
         cardLink.appendChild(img);
         cardLink.appendChild(nameDiv);
         li.appendChild(cardLink);
+
+        // ✅ Flip Button
+        if (card.cardImageBack) {
+          const flipButton = document.createElement("button");
+          flipButton.textContent = "Flip Card";
+          flipButton.style.marginTop = "0.3rem";
+          flipButton.addEventListener("click", (e) => {
+            e.preventDefault();
+            if (img.src === img.dataset.front) {
+              img.src = img.dataset.back;
+            } else {
+              img.src = img.dataset.front;
+            }
+          });
+          li.appendChild(flipButton);
+        }
+
         li.appendChild(pointsDiv);
         leaderboard.appendChild(li);
       });
@@ -169,6 +191,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   loadLeaderboard(currentPage);
 });
+
+
 
 
 

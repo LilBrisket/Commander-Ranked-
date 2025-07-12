@@ -1,5 +1,3 @@
-// db.js
-
 const fs = require('fs');
 const path = require('path');
 const Database = require('better-sqlite3');
@@ -21,6 +19,7 @@ db.prepare(`
     id TEXT PRIMARY KEY,
     name TEXT,
     image TEXT,
+    image_back TEXT,
     points INTEGER DEFAULT 0,
     seen INTEGER DEFAULT 0,
     color TEXT,
@@ -28,13 +27,11 @@ db.prepare(`
   )
 `).run();
 
-// ✅ Add indexes for faster filtering & sorting
 db.prepare(`CREATE INDEX IF NOT EXISTS idx_points ON cards(points)`).run();
 db.prepare(`CREATE INDEX IF NOT EXISTS idx_name ON cards(name)`).run();
 db.prepare(`CREATE INDEX IF NOT EXISTS idx_color ON cards(color)`).run();
 db.prepare(`CREATE INDEX IF NOT EXISTS idx_type ON cards(type)`).run();
 
-// 🎨 Color identity mapping
 const colorMap = {
   W: 'White',
   U: 'Blue',
@@ -49,8 +46,8 @@ function seedCardsFromScryfall() {
     const scryfallCards = JSON.parse(raw);
 
     const insert = db.prepare(`
-      INSERT INTO cards (id, name, image, color, type)
-      VALUES (?, ?, ?, ?, ?)
+      INSERT INTO cards (id, name, image, image_back, color, type)
+      VALUES (?, ?, ?, ?, ?, ?)
     `);
 
     let added = 0;
@@ -58,13 +55,17 @@ function seedCardsFromScryfall() {
     for (const card of scryfallCards) {
       const id = card.id;
       const name = (card.name || '').trim();
-      const imageCandidate =
+
+      const imageFront =
         card.image_uris?.normal ||
         card.card_faces?.[0]?.image_uris?.normal ||
         null;
 
-      const image = imageCandidate?.startsWith('https://cards.scryfall.io/normal/')
-        ? imageCandidate
+      const imageBack =
+        card.card_faces?.[1]?.image_uris?.normal || null;
+
+      const image = imageFront?.startsWith('https://cards.scryfall.io/normal/')
+        ? imageFront
         : null;
 
       const color = Array.isArray(card.color_identity)
@@ -74,7 +75,7 @@ function seedCardsFromScryfall() {
       const type = card.type_line || null;
 
       if (id && name && image) {
-        insert.run(id, name, image, color, type);
+        insert.run(id, name, image, imageBack, color, type);
         added++;
         if (added % 500 === 0) {
           console.log(`→ Inserted ${added} cards so far...`);
@@ -103,5 +104,6 @@ try {
 }
 
 module.exports = db;
+
 
 

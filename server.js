@@ -7,7 +7,13 @@ const fs = require('fs');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const dbPath = '/DatabaseDisk/cards.db';
+// Choose DB path based on env or fallback
+const dbPath =
+  process.env.DATABASE_PATH ||
+  (process.env.RENDER_PERSISTENT_DIR
+    ? path.join(process.env.RENDER_PERSISTENT_DIR, 'cards.db')
+    : path.join('.', 'cards.db'));
+
 console.log('📂 Using database path:', dbPath);
 
 if (!fs.existsSync(dbPath)) {
@@ -18,11 +24,13 @@ if (!fs.existsSync(dbPath)) {
 const db = new Database(dbPath);
 db.pragma('journal_mode = WAL');
 
+// Make sure tables exist
 db.prepare(`
   CREATE TABLE IF NOT EXISTS cards (
     id TEXT PRIMARY KEY,
     name TEXT,
     image TEXT,
+    image_back TEXT,
     points INTEGER DEFAULT 0,
     seen INTEGER DEFAULT 0,
     color TEXT,
@@ -41,10 +49,11 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
 
+// 🃏 Get random cards
 app.get('/api/cards/random', (req, res) => {
   try {
     const cards = db.prepare(`
-      SELECT id, name, image
+      SELECT id, name, image, image_back
       FROM cards
       WHERE image IS NOT NULL AND image != ''
       ORDER BY RANDOM()
@@ -62,6 +71,7 @@ app.get('/api/cards/random', (req, res) => {
   }
 });
 
+// 📩 Submit rankings
 app.post('/api/rankings', (req, res) => {
   const { ranking } = req.body;
 
@@ -102,6 +112,7 @@ app.post('/api/rankings', (req, res) => {
   res.json({ message: 'Thanks for ranking!' });
 });
 
+// 🏆 Get leaderboard
 app.get('/api/leaderboard', (req, res) => {
   try {
     const maxLimit = 30000;
@@ -149,14 +160,14 @@ app.get('/api/leaderboard', (req, res) => {
     const sortOrder = sort === 'asc' ? 'ASC' : 'DESC';
 
     const dataQuery = `
-      SELECT id AS cardId, name AS cardName, image AS cardImage, points
+      SELECT id AS cardId, name AS cardName, image AS cardImage, image_back AS cardImageBack, points
       FROM cards
       ${whereClause}
       ORDER BY points ${sortOrder}
     `;
     const allCards = db.prepare(dataQuery).all(...values);
 
-    // ✅ competition ranking logic with ascending counting down
+    // 🥇 Competition ranking with ascending count down if needed
     let rank = (sort === 'asc') ? total : 1;
     let lastPoints = null;
     let lastRank = rank;
@@ -195,6 +206,7 @@ app.get('/api/leaderboard', (req, res) => {
   }
 });
 
+// 📈 Stats
 app.get('/api/stats', (req, res) => {
   try {
     const row = db.prepare(`SELECT value FROM meta WHERE key = 'rankings_submitted'`).get();
@@ -209,6 +221,8 @@ app.get('/api/stats', (req, res) => {
 app.listen(PORT, () => {
   console.log(`🚀 Server running at http://localhost:${PORT}`);
 });
+
+
 
 
 

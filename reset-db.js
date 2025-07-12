@@ -5,16 +5,15 @@ const db = new Database('cards.db');
 
 db.pragma('journal_mode = WAL');
 
-// 🧹 Delete existing cards
 db.prepare('DELETE FROM cards').run();
 console.log('🧼 Cleared existing cards');
 
-// ✅ Ensure cards table exists (if using standalone seed script)
 db.prepare(`
   CREATE TABLE IF NOT EXISTS cards (
     id TEXT PRIMARY KEY,
     name TEXT,
     image TEXT,
+    image_back TEXT,
     points INTEGER DEFAULT 0,
     seen INTEGER DEFAULT 0,
     color TEXT,
@@ -22,13 +21,12 @@ db.prepare(`
   )
 `).run();
 
-// 🔄 Load Scryfall JSON
 const raw = fs.readFileSync(path.join(__dirname, 'scryfall-cards.json'), 'utf-8');
 const scryfallCards = JSON.parse(raw);
 
 const insert = db.prepare(`
-  INSERT INTO cards (id, name, image, color, type)
-  VALUES (?, ?, ?, ?, ?)
+  INSERT INTO cards (id, name, image, image_back, color, type)
+  VALUES (?, ?, ?, ?, ?, ?)
 `);
 
 let added = 0;
@@ -38,16 +36,18 @@ for (const card of scryfallCards) {
   const id = card.id;
   const name = card.name;
 
-  // 🚫 Skip duplicate card names (only one printing per name)
   if (seenNames.has(name)) continue;
 
-  const imageCandidate =
+  const imageFront =
     card.image_uris?.normal ||
     card.card_faces?.[0]?.image_uris?.normal ||
     null;
 
-  const image = imageCandidate?.startsWith('https://cards.scryfall.io/normal/')
-    ? imageCandidate
+  const imageBack =
+    card.card_faces?.[1]?.image_uris?.normal || null;
+
+  const image = imageFront?.startsWith('https://cards.scryfall.io/normal/')
+    ? imageFront
     : null;
 
   const color = Array.isArray(card.color_identity)
@@ -64,22 +64,21 @@ for (const card of scryfallCards) {
 
   const type = card.type_line || '';
 
-  // ✅ Apply all filters
   if (
-    card.lang !== 'en' || // English only
-    card.legalities?.commander !== 'legal' || // Commander legal
-    !['core', 'expansion'].includes(card.set_type) || // Base printings only
-    !image || // Must have usable image
-    type.includes('Basic Land') // ❌ Exclude Basic Lands
+    card.lang !== 'en' ||
+    card.legalities?.commander !== 'legal' ||
+    !['core', 'expansion'].includes(card.set_type) ||
+    !image ||
+    type.includes('Basic Land')
   ) {
     continue;
   }
 
-  // ✅ Insert card and track the name
-  insert.run(id, name, image, color, type);
+  insert.run(id, name, image, imageBack, color, type);
   seenNames.add(name);
   added++;
 }
 
 console.log(`🃏 Re-seeded ${added} unique Commander-legal, English cards`);
+
 
