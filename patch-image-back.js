@@ -1,51 +1,50 @@
 const fs = require('fs');
 const path = require('path');
 const Database = require('better-sqlite3');
-const { chain } = require('stream-chain');
-const { parser } = require('stream-json');
-const { streamArray } = require('stream-json/streamers/StreamArray');
 
-// ✅ Use correct database path
-const dbPath = process.env.DATABASE_PATH ||
+// detect DB path
+const dbPath =
+  process.env.DATABASE_PATH ||
   (process.env.RENDER_PERSISTENT_DIR
     ? path.join(process.env.RENDER_PERSISTENT_DIR, 'cards.db')
     : path.join('.', 'cards.db'));
 
-console.log(`📂 Using database at: ${dbPath}`);
-
+console.log(`📂 Using database: ${dbPath}`);
 const db = new Database(dbPath);
-const update = db.prepare(`UPDATE cards SET image_back = ? WHERE id = ?`);
+db.pragma('journal_mode = WAL');
+
+// detect Scryfall JSON path
+const scryfallPath =
+  process.env.SCRYFALL_JSON_PATH ||
+  (fs.existsSync('/DatabaseDisk/scryfall-cards.json')
+    ? '/DatabaseDisk/scryfall-cards.json'
+    : './scryfall-cards.json');
+
+console.log(`📄 Reading Scryfall JSON from: ${scryfallPath}`);
+const scryfallCards = JSON.parse(fs.readFileSync(scryfallPath, 'utf-8'));
+
+const update = db.prepare(`
+  UPDATE cards
+  SET image_back = ?
+  WHERE id = ?
+`);
+
 let updated = 0;
 
-// ✅ Use correct Scryfall JSON path
-const scryfallPath = process.env.SCRYFALL_JSON_PATH || '/DatabaseDisk/scryfall-cards.json';
-console.log(`📄 Reading Scryfall JSON from: ${scryfallPath}`);
-
-const pipeline = chain([
-  fs.createReadStream(scryfallPath),
-  parser(),
-  streamArray(),
-]);
-
-pipeline.on('data', ({ value: card }) => {
+for (const card of scryfallCards) {
   const id = card.id;
 
-  const imageCandidate =
+  const backImageCandidate =
     card.card_faces?.[1]?.image_uris?.normal || null;
 
-  if (imageCandidate) {
-    const result = update.run(imageCandidate, id);
-    if (result.changes > 0) updated++;
-  }
-});
+  if (!backImageCandidate) continue;
 
-pipeline.on('end', () => {
-  console.log(`✅ Finished: updated ${updated} cards with back images`);
-});
+  const result = update.run(backImageCandidate, id);
+  if (result.changes > 0) updated++;
+}
 
-pipeline.on('error', (err) => {
-  console.error('❌ Error during processing:', err);
-});
+console.log(`🔄 Updated ${updated} cards with back images.`);
+
 
 
 
