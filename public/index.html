@@ -129,6 +129,7 @@
 
 <script>
 const fallbackImage = "https://placehold.co/312x436?text=No+Image";
+let sortableInstance = null;
 
 function createCardElement(card) {
   const cardDiv = document.createElement("div");
@@ -212,7 +213,12 @@ async function loadCards() {
   } finally {
     loading.style.display = "none";
     document.getElementById("submit-ranking").disabled = false;
-    new Sortable(container, { animation: 150 });
+
+    if (sortableInstance) {
+      sortableInstance.destroy();
+    }
+
+    sortableInstance = new Sortable(container, { animation: 150 });
   }
 }
 
@@ -309,6 +315,7 @@ observer.observe(cardContainer, { childList: true, subtree: true });
 </script>
 </body>
 </html>
+
 
 
 
