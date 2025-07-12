@@ -4,7 +4,10 @@ const Database = require('better-sqlite3');
 const path = require('path');
 
 const db = new Database('cards.db');
-const scryfallCards = JSON.parse(fs.readFileSync('scryfall-cards.json', 'utf-8'));
+
+// 👇 Change here: use /DatabaseDisk/scryfall-cards.json
+const scryfallPath = process.env.SCRYFALL_JSON_PATH || '/DatabaseDisk/scryfall-cards.json';
+const scryfallCards = JSON.parse(fs.readFileSync(scryfallPath, 'utf-8'));
 
 const update = db.prepare(`UPDATE cards SET image_back = ? WHERE id = ?`);
 let updated = 0;
@@ -23,3 +26,4 @@ for (const card of scryfallCards) {
 }
 
 console.log(`🔄 Updated ${updated} cards with back images`);
+
