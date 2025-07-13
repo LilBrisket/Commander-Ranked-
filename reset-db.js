@@ -1,27 +1,30 @@
 const fs = require('fs');
 const path = require('path');
 const Database = require('better-sqlite3');
-const db = new Database('cards.db');
+const schema = require('./dbSchema');
 
+const dbPath =
+  process.env.DATABASE_PATH ||
+  (process.env.RENDER_PERSISTENT_DIR
+    ? path.join(process.env.RENDER_PERSISTENT_DIR, 'cards.db')
+    : path.join('.', 'cards.db'));
+
+console.log(`📂 Using database: ${dbPath}`);
+const db = new Database(dbPath);
 db.pragma('journal_mode = WAL');
 
 db.prepare('DELETE FROM cards').run();
 console.log('🧼 Cleared existing cards');
 
-db.prepare(`
-  CREATE TABLE IF NOT EXISTS cards (
-    id TEXT PRIMARY KEY,
-    name TEXT,
-    image TEXT,
-    image_back TEXT,
-    points INTEGER DEFAULT 0,
-    seen INTEGER DEFAULT 0,
-    color TEXT,
-    type TEXT
-  )
-`).run();
+schema.ensureCardsTable(db);
 
-const raw = fs.readFileSync(path.join(__dirname, 'scryfall-cards.json'), 'utf-8');
+const scryfallPath =
+  process.env.SCRYFALL_JSON_PATH ||
+  (process.env.RENDER_PERSISTENT_DIR
+    ? path.join(process.env.RENDER_PERSISTENT_DIR, 'scryfall-cards.json')
+    : './scryfall-cards.json');
+
+const raw = fs.readFileSync(scryfallPath, 'utf-8');
 const scryfallCards = JSON.parse(raw);
 
 const insert = db.prepare(`
@@ -80,5 +83,7 @@ for (const card of scryfallCards) {
 }
 
 console.log(`🃏 Re-seeded ${added} unique Commander-legal, English cards`);
+
+
 
 

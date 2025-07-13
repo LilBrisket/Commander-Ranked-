@@ -46,7 +46,12 @@ a {
 
 /* 🏷️ rank-header Class for Moving Header */
 .rank-header {
-  margin-top: -10px;  /* Adjust this value to move the header up */
+  margin-top: -10px;
+}
+
+/* Desktop: normal header for .rank-header */
+body:not(.leaderboard-page) .page-header.rank-header {
+  margin-top: -15px !important;
 }
 
 /* 🚩 Navigation Bar */
@@ -568,6 +573,56 @@ a {
 .card-back {
   transform: rotateY(180deg);
 }
+
+/* 📱 Mobile styles */
+@media (max-width: 600px) {
+  body:not(.leaderboard-page) .page-header.rank-header {
+    margin-top: 17px !important;
+  }
+
+  #pagination-controls {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  #pagination-controls button {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.85rem;
+  }
+
+  #pagination-controls input[type="number"] {
+    width: 60px;
+    font-size: 0.85rem;
+    padding: 0.3rem;
+  }
+
+  /* 📱 Mobile: extra space below filters */
+  #filter-form {
+    margin-bottom: 1rem;
+  }
+
+  /* 📱 Mobile: tighten space between result count & leaderboard */
+  #result-count {
+    margin-bottom: 0.25rem;
+  }
+
+  #leaderboard {
+    margin-top: 0.5rem !important;
+  }
+
+  body.leaderboard-page .page-header {
+    margin-top: 7rem !important;
+  }
+
+  body:not(.leaderboard-page) .page-header {
+    margin-top: 3.5rem !important;
+  }
+}
+
+
+
+
+
 
 
 

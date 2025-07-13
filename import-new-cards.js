@@ -2,7 +2,6 @@ const fs = require('fs');
 const path = require('path');
 const Database = require('better-sqlite3');
 
-// detect DB path
 const dbPath =
   process.env.DATABASE_PATH ||
   (process.env.RENDER_PERSISTENT_DIR
@@ -13,11 +12,10 @@ console.log(`📂 Using database: ${dbPath}`);
 const db = new Database(dbPath);
 db.pragma('journal_mode = WAL');
 
-// detect Scryfall JSON path
 const scryfallPath =
   process.env.SCRYFALL_JSON_PATH ||
-  (fs.existsSync('/DatabaseDisk/scryfall-cards.json')
-    ? '/DatabaseDisk/scryfall-cards.json'
+  (process.env.RENDER_PERSISTENT_DIR
+    ? path.join(process.env.RENDER_PERSISTENT_DIR, 'scryfall-cards.json')
     : './scryfall-cards.json');
 
 console.log(`📄 Reading Scryfall JSON from: ${scryfallPath}`);
@@ -68,3 +66,4 @@ for (const card of scryfallCards) {
 }
 
 console.log(`✅ Added ${added} new cards to the database.`);
+

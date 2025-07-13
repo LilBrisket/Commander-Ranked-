@@ -3,14 +3,13 @@ const path = require('path');
 const Database = require('better-sqlite3');
 const schema = require('./dbSchema');
 
-const dbPath = process.env.DATABASE_PATH || '/DatabaseDisk/cards.db';
-console.log('📂 Using database path:', dbPath);
+const dbPath =
+  process.env.DATABASE_PATH ||
+  (process.env.RENDER_PERSISTENT_DIR
+    ? path.join(process.env.RENDER_PERSISTENT_DIR, 'cards.db')
+    : path.join('.', 'cards.db'));
 
-if (!fs.existsSync(dbPath)) {
-  console.error('❌ Database file not found at:', dbPath);
-  process.exit(1);
-}
-
+console.log(`📂 Using database: ${dbPath}`);
 const db = new Database(dbPath);
 db.pragma('journal_mode = WAL');
 
@@ -19,11 +18,16 @@ schema.ensureCardsTable(db);
 console.log('🚀 Starting card import...');
 console.time('⏱️ Import duration');
 
-const filePath = path.join('/DatabaseDisk', 'scryfall-cards.json');
+const scryfallPath =
+  process.env.SCRYFALL_JSON_PATH ||
+  (process.env.RENDER_PERSISTENT_DIR
+    ? path.join(process.env.RENDER_PERSISTENT_DIR, 'scryfall-cards.json')
+    : './scryfall-cards.json');
+
 let raw;
 
 try {
-  raw = fs.readFileSync(filePath, 'utf-8');
+  raw = fs.readFileSync(scryfallPath, 'utf-8');
 } catch (err) {
   console.error('❌ Failed to read scryfall-cards.json:', err.message);
   process.exit(1);
@@ -124,6 +128,7 @@ console.log(`   — ${stats.notCommander} not Commander-legal`);
 console.log(`   — ${stats.badLayout} unsupported layout`);
 console.log(`   — ${stats.noImage} missing image`);
 console.log(`   — ${stats.duplicate} duplicate versions`);
+
 
 
 
