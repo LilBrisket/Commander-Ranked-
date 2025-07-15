@@ -49,11 +49,6 @@ a {
   margin-top: -10px;
 }
 
-/* Desktop: normal header for .rank-header */
-body:not(.leaderboard-page) .page-header.rank-header {
-  margin-top: -15px !important;
-}
-
 /* 🚩 Navigation Bar */
 .nav-banner {
   position: fixed;
@@ -69,7 +64,7 @@ body:not(.leaderboard-page) .page-header.rank-header {
 .nav-banner a {
   margin: 0 1rem;
   font-weight: 600;
-  font-size: 1rem;
+  font-size: 16px !important;
   font-family: 'Inter', sans-serif;
   color: #fff;
   padding: 0.4rem 0.8rem;
@@ -442,8 +437,6 @@ body:not(.leaderboard-page) .page-header.rank-header {
   .card-name {
     font-size: 0.7rem;
     line-height: 1.2;
-    max-width: 100%;
-    min-height: 2.4em;
   }
 
   .card-labels {
@@ -537,7 +530,7 @@ body:not(.leaderboard-page) .page-header.rank-header {
   }
 }
 
-/* 🎴 Flip Card Styles (Added) */
+/* 🎴 Flip Card Styles */
 .card-flipper {
   position: relative;
   perspective: 1000px;
@@ -577,7 +570,7 @@ body:not(.leaderboard-page) .page-header.rank-header {
 /* 📱 Mobile styles */
 @media (max-width: 600px) {
   body:not(.leaderboard-page) .page-header.rank-header {
-    margin-top: 17px !important;
+    margin-top: 25px !important;
   }
 
   #pagination-controls {
@@ -603,7 +596,7 @@ body:not(.leaderboard-page) .page-header.rank-header {
 
   /* 📱 Mobile: tighten space between result count & leaderboard */
   #result-count {
-    margin-bottom: 0.25rem;
+    margin-bottom: 25px;
   }
 
   #leaderboard {
@@ -611,7 +604,7 @@ body:not(.leaderboard-page) .page-header.rank-header {
   }
 
   body.leaderboard-page .page-header {
-    margin-top: 7rem !important;
+    margin-top: 4rem !important;
   }
 
   body:not(.leaderboard-page) .page-header {
