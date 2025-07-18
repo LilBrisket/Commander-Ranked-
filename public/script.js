@@ -11,20 +11,6 @@ async function loadCards() {
   if (submitBtn) submitBtn.disabled = true;
   container.innerHTML = "";
 
-  // ➕ Add arrow strength bar once
-  if (!document.querySelector(".arrow-bar")) {
-    const bar = document.createElement("div");
-    bar.className = "arrow-bar";
-
-    bar.innerHTML = `
-      <span class="arrow-label">Strongest</span>
-      <div class="arrow-line"></div>
-      <span class="arrow-label">Weakest</span>
-    `;
-
-    main.insertBefore(bar, loader);
-  }
-
   try {
     const res = await fetch("/api/cards/random");
     const contentType = res.headers.get("content-type");

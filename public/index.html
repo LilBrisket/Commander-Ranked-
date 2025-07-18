@@ -11,78 +11,45 @@
 <link rel="stylesheet" href="style.css" />
 
 <style>
-  .arrow-labels {
+  .label-row {
     display: flex;
-    justify-content: space-between;
-    padding: 0 0.5rem;
+    justify-content: space-around;
+    max-width: 600px;
+    margin: 1.5rem auto;
+    font-weight: bold;
+    margin-bottom: -45px;
   }
 
-  @media (max-width: 600px) {
-    html {
-      font-size: 90%;
-    }
-
-    #card-container {
-      flex-wrap: nowrap;
-      overflow-x: auto;
-    }
-
-    .card-item {
-      width: 220px;
-      flex: 0 0 auto;
-    }
-
-    .card-image {
-      width: 100%;
-      max-width: 312px;
-      height: auto;
-      display: block;
-      margin: 0 auto;
-      image-rendering: auto;
-    }
-
-    .card-name {
-      display: none !important;
-    }
-
-    .arrow-bar {
-      padding: 0.25rem 1rem;
-    }
-
-    .arrow-labels span {
-      font-size: 0.9rem;
-    }
-
-    #fake-scrollbar-wrapper {
-      position: relative;
-      height: 16px;
-      margin-top: 0.5rem;
-      background: #ccc;
-      border-radius: 8px;
-      overflow: hidden;
-      width: 100%;
-    }
-
-    #fake-scrollbar-thumb {
-      height: 100%;
-      background: #000;
-      border-radius: 8px;
-      width: 25%;
-      position: absolute;
-      left: 0;
-      cursor: grab;
-      transition: background 0.2s ease;
-    }
-
-    #fake-scrollbar-thumb:active {
-      cursor: grabbing;
-      background: #444;
-    }
+  .label-row.bottom {
+    margin-top: -22px;
+    margin-bottom: 1rem;
   }
+
+  .label-row div {
+    width: 45%;
+    text-align: center;
+  }
+
+.label-row div {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 45%;
+  text-align: center;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #fff;
+  background: #000;
+  padding: 0.6rem 1.2rem;
+  border-radius: 6px;
+  text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+}
+
 </style>
+
 </head>
 
-<body>
+<body class="ranker-page">
 <h1 class="page-header">Commander Ranked</h1>
 
 <nav class="nav-banner" role="navigation">
@@ -93,25 +60,40 @@
 </nav>
 
 <main class="container">
-  <div class="arrow-bar">
-    <div class="arrow-labels">
-      <span class="arrow-label">Strongest</span>
-      <span class="arrow-label">Weakest</span>
-    </div>
-    <div class="arrow-line-wrapper">
-      <div class="arrow-line"></div>
-    </div>
-  </div>
 
   <div id="card-loading" style="display: none; font-weight: bold; margin-top: 1rem;">
     Loading cards...
   </div>
 
+  <div class="label-row">
+    <div>Strongest</div>
+    <div>Strong</div>
+  </div>
+
   <div id="scroll-area-wrapper">
-    <div id="card-container" class="card-list"></div>
+    <div id="card-container">
+      <div class="grid-cell">
+        <div class="card-slot"></div>
+      </div>
+      <div class="grid-cell">
+        <div class="card-slot"></div>
+      </div>
+      <div class="grid-cell">
+        <div class="card-slot"></div>
+      </div>
+      <div class="grid-cell">
+        <div class="card-slot"></div>
+      </div>
+    </div>
+
     <div id="fake-scrollbar-wrapper">
       <div id="fake-scrollbar-thumb"></div>
     </div>
+  </div>
+
+  <div class="label-row bottom">
+    <div>Weak</div>
+    <div>Weakest</div>
   </div>
 
   <button id="submit-ranking" disabled>Submit Ranking</button>
@@ -160,32 +142,29 @@ function createCardElement(card) {
     this.src = fallbackImage;
   };
 
+img.addEventListener("dblclick", () => {
+  window.open(`https://scryfall.com/card/${card.id}`, "_blank", "noopener");
+});
+
   wrapper.appendChild(img);
 
-  const nameLink = document.createElement("a");
-  nameLink.className = "card-name";
-  nameLink.href = `https://scryfall.com/card/${card.id}`;
-  nameLink.target = "_blank";
-  nameLink.rel = "noopener noreferrer";
-  nameLink.textContent = card.name;
-
-  wrapper.appendChild(nameLink);
-
   if (card.image_back) {
-    const flipButton = document.createElement("button");
-    flipButton.textContent = "Flip Card";
-    flipButton.style.marginTop = "0.5rem";
-    flipButton.addEventListener("click", (e) => {
-      e.preventDefault();
-      const currentSrc = img.src;
-      if (img.dataset.back && currentSrc === img.dataset.front) {
-        img.src = img.dataset.back;
-      } else {
-        img.src = img.dataset.front;
-      }
-    });
-    wrapper.appendChild(flipButton);
-  }
+  const flipButton = document.createElement("button");
+  flipButton.textContent = "Flip Card";
+  flipButton.style.marginTop = "-5px";
+  
+  flipButton.addEventListener("click", (e) => {
+    e.preventDefault();
+    const currentSrc = img.src;
+    if (img.dataset.back && currentSrc === img.dataset.front) {
+      img.src = img.dataset.back;
+    } else {
+      img.src = img.dataset.front;
+    }
+  });
+
+  wrapper.appendChild(flipButton);
+}
 
   cardDiv.appendChild(wrapper);
   return cardDiv;
@@ -315,6 +294,7 @@ observer.observe(cardContainer, { childList: true, subtree: true });
 </script>
 </body>
 </html>
+
 
 
 
