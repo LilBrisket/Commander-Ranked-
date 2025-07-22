@@ -10,53 +10,21 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Bebas+Neue&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="style.css" />
 
-<style>
-  .label-row {
-    display: flex;
-    justify-content: space-around;
-    max-width: 600px;
-    margin: 1.5rem auto;
-    font-weight: bold;
-    margin-bottom: -45px;
-  }
-
-  .label-row.bottom {
-    margin-top: -22px;
-    margin-bottom: 1rem;
-  }
-
-  .label-row div {
-    width: 45%;
-    text-align: center;
-  }
-
-.label-row div {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 45%;
-  text-align: center;
-  font-size: 1rem;
-  font-weight: 600;
-  color: #fff;
-  background: #000;
-  padding: 0.6rem 1.2rem;
-  border-radius: 6px;
-  text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
-}
-
-</style>
-
 </head>
 
 <body class="ranker-page">
-<h1 class="page-header">Commander Ranked</h1>
 
 <nav class="nav-banner" role="navigation">
-  <a href="/index.html">Rank These Cards</a>
-  <a href="/leaderboard.html">Leaderboard</a>
-  <a href="/rank-your-deck.html">Rank Your Own Deck</a>
-  <a href="/about.html">About</a>
+  <div class="nav-title">Commander Ranked</div>
+
+  <button class="menu-toggle" aria-label="Menu">&#9776;</button>
+
+  <div class="nav-links">
+    <a href="/index.html">Rank These Cards</a>
+    <a href="/leaderboard.html">Leaderboard</a>
+    <a href="/rank-your-deck.html">Rank Your Own Deck</a>
+    <a href="/about.html">About</a>
+  </div>
 </nav>
 
 <main class="container">
@@ -66,9 +34,15 @@
   </div>
 
   <div class="label-row">
-    <div>Strongest</div>
-    <div>Strong</div>
-  </div>
+  <div class="label-strongest">Strongest</div>
+  <div class="label-strong">Strong</div>
+</div>
+
+<div id="desktop-labels">
+  <div class="desktop-label strongest">Strongest</div>
+  <div class="desktop-arrow"></div>
+  <div class="desktop-label weakest">Weakest</div>
+</div>
 
   <div id="scroll-area-wrapper">
     <div id="card-container">
@@ -92,9 +66,9 @@
   </div>
 
   <div class="label-row bottom">
-    <div>Weak</div>
-    <div>Weakest</div>
-  </div>
+  <div class="label-weak">Weak</div>
+  <div class="label-weakest">Weakest</div>
+</div>
 
   <button id="submit-ranking" disabled>Submit Ranking</button>
 
@@ -291,6 +265,10 @@ window.addEventListener("mouseup", () => {
 
 const observer = new MutationObserver(syncFakeScrollbar);
 observer.observe(cardContainer, { childList: true, subtree: true });
+
+document.querySelector('.menu-toggle').addEventListener('click', () => {
+    document.querySelector('.nav-links').classList.toggle('show');
+  });
 </script>
 </body>
 </html>

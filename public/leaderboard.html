@@ -12,13 +12,16 @@
 </head>
 
 <body class="leaderboard-page">
-<h1 class="page-header">Commander Ranked</h1>
 
 <nav class="nav-banner" role="navigation">
-  <a href="/index.html">Rank These Cards</a>
-  <a href="/leaderboard.html">Leaderboard</a>
-  <a href="/rank-your-deck.html">Rank Your Own Deck</a>
-  <a href="/about.html">About</a>
+  <div class="nav-title">Commander Ranked</div>
+  <button class="menu-toggle" aria-label="Menu">&#9776;</button>
+  <div class="nav-links">
+    <a href="/index.html">Rank These Cards</a>
+    <a href="/leaderboard.html">Leaderboard</a>
+    <a href="/rank-your-deck.html">Rank Your Own Deck</a>
+    <a href="/about.html">About</a>
+  </div>
 </nav>
 
 <main class="container">
@@ -78,7 +81,6 @@
   Magic: The Gathering and its trademarks are © Wizards of the Coast. This site is unaffiliated.
 </footer>
 
-<script src="leaderboard.js"></script>
 <script>
 // ✅ leaderboard.js logic inlined
 const fallbackImage = "https://placehold.co/223x310?text=No+Image";
@@ -86,6 +88,15 @@ const fallbackImage = "https://placehold.co/223x310?text=No+Image";
 console.log("✅ leaderboard.js loaded!");
 
 document.addEventListener("DOMContentLoaded", () => {
+  // ✅ Menu toggle handler — moved to top
+  const menuBtn = document.querySelector('.menu-toggle');
+  const navLinks = document.querySelector('.nav-links');
+  if (menuBtn && navLinks) {
+    menuBtn.addEventListener('click', () => {
+      navLinks.classList.toggle('show');
+    });
+  }
+
   const leaderboard = document.getElementById("leaderboard");
   const prevBtn = document.getElementById("prev-btn");
   const nextBtn = document.getElementById("next-btn");

@@ -23,53 +23,65 @@ a {
   display: inline-block;
 }
 
-/* 🧢 Page Header */
-.page-header {
-  text-align: center;
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 4.2rem;
-  font-weight: 400;
-  letter-spacing: 1px;
-  margin: 1rem 0 0.2rem;
-  color: #000;
-  opacity: 0;
-  transform: translateY(-20px);
-  animation: fadeSlideDown 0.9s ease-out forwards;
-}
-
-@keyframes fadeSlideDown {
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
 /* 🚩 Navigation Bar */
 .nav-banner {
+  background-color: #000;
+  padding: 0.3rem 1rem;
   position: fixed;
   top: 0;
   left: 0;
-  z-index: 999;
   width: 100%;
-  background-color: #000;
-  padding: 0.3rem 0;
+  z-index: 999;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nav-title {
+  background: #fff;
+  color: #000;
+  padding: 0.2rem 0.6rem;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: 1px;
+  border-radius: 4px;
+  margin-bottom: 0rem;
   text-align: center;
 }
 
-.nav-banner a {
-  margin: 0 1rem;
-  font-weight: 600;
-  font-size: 16px !important;
-  font-family: 'Inter', sans-serif;
-  color: #fff;
-  padding: 0.4rem 0.8rem;
-  border-radius: 4px;
-  transition: color 0.2s ease, background 0.2s ease;
+.nav-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: center;
 }
 
-.nav-banner a:hover {
-  color: #ddd;
-  background-color: rgba(255, 255, 255, 0.1);
+.nav-links a {
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 600;
+  font-family: 'Inter', sans-serif;
+  text-decoration: none;
+  padding: 0.4rem 0.8rem;
+  transition: background 0.2s ease, color 0.2s ease;
+  border-radius: 4px;
+}
+
+.nav-links a:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Menu toggle button — only visible on mobile */
+.menu-toggle {
+  display: none; /* hidden by default */
+  background: none;
+  color: #fff;
+  font-size: 1.8rem;
+  border: none;
+  cursor: pointer;
+  margin-left: auto;
 }
 
 /* 📦 Container */
@@ -77,6 +89,10 @@ a {
   max-width: 1200px;
   margin: 0 auto;
   padding: 0 1rem;
+}
+
+#scroll-area-wrapper {
+  position: relative;
 }
 
 /* 🔎 Filter Form */
@@ -127,14 +143,13 @@ a {
 }
 
 #card-container {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  grid-template-rows: repeat(2, auto);
-  gap: 1.5rem;
-  place-items: center;
+  display: flex;
+  justify-content: center; /* center the row in the container */
+  gap: 1.5rem; /* space between cards */
+  flex-wrap: nowrap; /* don’t wrap on desktop */
   margin: 2rem auto;
   padding: 1rem;
-  max-width: 600px;
+  max-width: 100%;
 }
 
 #card-container::-webkit-scrollbar {
@@ -156,12 +171,12 @@ a {
 .card-item {
   flex: 0 0 auto;
   width: 245px;
-  display: flex;
+  display: inline-flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
   cursor: grab;
-  height: 368px; /* adjust as needed */
+  height: 368px;
 }
 
 .card-wrapper {
@@ -169,7 +184,7 @@ a {
   width: 100%;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: flex-start;
   align-items: center;
 }
 
@@ -362,8 +377,29 @@ a {
 }
 
 /* 📱 Mobile + Fake Scrollbar Overlay */
-@media (max-width: 600px) {
+@media (max-width: 1024px) {
  
+   .menu-toggle {
+    display: block;
+  }
+
+  .nav-links {
+    display: none;
+    flex-direction: column;
+    background: #000;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    text-align: center;
+    margin-left: 0;
+    gap: 0;
+  }
+
+  .nav-links.show {
+    display: flex;
+  }
+
   .label-row.bottom {
     margin-top: -40px !important;
   }
@@ -372,22 +408,22 @@ a {
   justify-content: flex-start;
 }
 
-  .page-header {
-    margin-top: 3rem;
-  }
+ #card-container {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(160px, 1fr)); /* 👈 bigger min size */
+  gap: 0.75rem; /* optional: more space between */
+  justify-content: center;
+  justify-items: center;
+}
 
-  #card-container {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 0.5rem;
-    justify-content: center;
-  
-  }
-
- .card-item {
-  flex: 0 0 auto;
-  width: 190px; 
-  margin-bottom: -65px;
+.card-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 220px; /* 👈 optional: cap the max size so they don’t get too huge */
+  height: auto;
+  margin-bottom: 0.5rem;
 }
 
 .card-image {
@@ -425,16 +461,12 @@ a {
    #clear-filters {
     margin-top: 0.5rem;
    }
-   
-  .nav-banner {
-    padding: 0.4rem 0;
-  }
 
-  .nav-banner a {
-    font-size: 1rem;
-    padding: 0.4rem 0.8rem;
-  }
-
+   .label-row div {
+  font-size: 0.75rem !important;
+  padding: 0.4rem 0.6rem !important;
+  width: auto!important;
+}
 }
 
 /* 🎴 Flip Card Styles */
@@ -475,7 +507,7 @@ a {
 }
 
 /* 📱 Mobile styles */
-@media (max-width: 600px) {
+@media (max-width: 1024px) {
   
   #pagination-controls {
     flex-wrap: wrap;
@@ -507,6 +539,115 @@ a {
     margin-top: 0.5rem !important;
   }
 }
+
+ .label-row {
+    display: flex;
+    justify-content: space-around;
+    max-width: 600px;
+    margin: 1.5rem auto;
+    font-weight: bold;
+    margin-bottom: -45px;
+  }
+
+  .label-row.bottom {
+    margin-top: -22px;
+    margin-bottom: 1rem;
+  }
+
+  .label-row div {
+    width: 45%;
+    text-align: center;
+  }
+
+.label-row div {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 45%;
+  text-align: center;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #fff;
+  background: #000;
+  padding: 0.6rem 1.2rem;
+  border-radius: 6px;
+  text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+}
+
+#desktop-labels {
+  display: none; /* hide by default */
+}
+
+@media (min-width: 1025px) {
+  /* hide mobile labels */
+  .label-strongest,
+  .label-strong,
+  .label-weak,
+  .label-weakest {
+    display: none !important;
+  }
+
+    #desktop-labels {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 1rem auto;
+    max-width: 1200px;
+    position: relative;
+    z-index: 10;
+  }
+
+  .desktop-label {
+     font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    background: #000;
+    color: #fff;
+    padding: 0.3rem 0.6rem;
+    border-radius: 4px;
+    font-size: 1rem;
+  }
+
+  .desktop-arrow {
+    flex: 1;
+    height: 2px;
+    background: #000;
+    position: relative;
+    margin: 0 1rem;
+  }
+
+  .desktop-arrow::before,
+  .desktop-arrow::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    border: solid #000;
+    width: 0;
+    height: 0;
+  }
+
+  .desktop-arrow::before {
+    left: -8px;
+    border-width: 6px 8px 6px 0;
+    border-color: transparent #000 transparent transparent;
+  }
+
+  .desktop-arrow::after {
+    right: -8px;
+    border-width: 6px 0 6px 8px;
+    border-color: transparent transparent transparent #000;
+  }
+
+    body.ranker-page {
+  padding-top: 5.3rem; /* ✅ only for ranker page */
+}
+}
+
+
+
+
+
+
 
 
 

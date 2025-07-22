@@ -12,13 +12,15 @@
 <body>
 
 <nav class="nav-banner" role="navigation">
-  <a href="/index.html">Rank These Cards</a>
-  <a href="/leaderboard.html">Leaderboard</a>
-  <a href="/rank-your-deck.html">Rank Your Own Deck</a>
-  <a href="/about.html">About</a>
+  <div class="nav-title">Commander Ranked</div>
+  <button class="menu-toggle" aria-label="Menu">&#9776;</button>
+  <div class="nav-links">
+    <a href="/index.html">Rank These Cards</a>
+    <a href="/leaderboard.html">Leaderboard</a>
+    <a href="/rank-your-deck.html">Rank Your Own Deck</a>
+    <a href="/about.html">About</a>
+  </div>
 </nav>
-
-<h1 class="page-header">About Commander Ranked</h1>
 
 <main class="container">
 <section style="margin-top: 2rem; text-align: center; color: #000;">
@@ -59,6 +61,13 @@
 <footer class="footer">
 Card data and images courtesy of <a href="https://scryfall.com" target="_blank" rel="noopener noreferrer">Scryfall</a>. Magic: The Gathering and its trademarks are © Wizards of the Coast. This site is unaffiliated.
 </footer>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+      document.querySelector('.menu-toggle').addEventListener('click', () => {
+        document.querySelector('.nav-links').classList.toggle('show');
+      });
+    });
+</script>
 </body>
 </html>
 

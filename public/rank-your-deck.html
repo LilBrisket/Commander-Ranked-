@@ -11,16 +11,20 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+
   <nav class="nav-banner" role="navigation">
+  <div class="nav-title">Commander Ranked</div>
+  <button class="menu-toggle" aria-label="Menu">&#9776;</button>
+  <div class="nav-links">
     <a href="/index.html">Rank These Cards</a>
     <a href="/leaderboard.html">Leaderboard</a>
     <a href="/rank-your-deck.html">Rank Your Own Deck</a>
     <a href="/about.html">About</a>
-  </nav>
+  </div>
+</nav>
 
   <main class="container">
     <section style="text-align: center; color: #000;">
-      <h1 class="page-header rank-header">Rank Your Own Deck</h1>
       <p style="font-size: 1.2rem; color: #000; margin-top: 1rem;">Under construction, coming soon</p>
       <img src="https://cards.scryfall.io/large/front/f/0/f0455a79-15f4-4ea6-87ae-263ce943cfac.jpg?1673481685" alt="The Beamtown Bullies" style="max-width: 250px; margin-top: 1.5rem; border-radius: 8px;" />
     </section>
@@ -30,6 +34,13 @@
     Card data and images courtesy of <a href="https://scryfall.com" target="_blank" rel="noopener noreferrer">Scryfall</a>.
     Magic: The Gathering and its trademarks are © Wizards of the Coast. This site is unaffiliated.
   </footer>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      document.querySelector('.menu-toggle').addEventListener('click', () => {
+        document.querySelector('.nav-links').classList.toggle('show');
+      });
+    });
+ </script>
 </body>
 </html>
 
