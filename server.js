@@ -53,12 +53,12 @@ app.use(express.static('public'));
 app.get('/api/cards/random', (req, res) => {
   try {
     const cards = db.prepare(`
-      SELECT id, name, image, image_back
-      FROM cards
-      WHERE image IS NOT NULL AND image != ''
-      ORDER BY RANDOM()
-      LIMIT 4
-    `).all();
+  SELECT id, name, image, image_back
+  FROM cards
+  WHERE active=1 AND image IS NOT NULL AND image != ''
+  ORDER BY RANDOM()
+  LIMIT 4
+`).all();
 
     if (!cards.length) {
       return res.status(404).json({ message: 'No cards found in database.' });
@@ -124,7 +124,7 @@ app.get('/api/leaderboard', (req, res) => {
     const type = req.query.type?.trim();
     const sort = req.query.sort?.trim().toLowerCase();
 
-    let whereClause = `WHERE points != 0 AND image IS NOT NULL AND image != ''`;
+    let whereClause = `WHERE active=1 AND points != 0 AND image IS NOT NULL AND image != ''`;
     const filters = [];
     const values = [];
 
