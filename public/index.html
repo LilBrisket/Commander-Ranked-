@@ -20,9 +20,9 @@
   <button class="menu-toggle" aria-label="Menu">&#9776;</button>
 
   <div class="nav-links">
-    <a href="/index.html">Rank These Cards</a>
+    <a href="/index.html">Card Ranker</a>
     <a href="/leaderboard.html">Leaderboard</a>
-    <a href="/rank-your-deck.html">Rank Your Own Deck</a>
+    <a href="/rank-your-deck.html">Deck Ranker</a>
     <a href="/about.html">About</a>
   </div>
 </nav>
@@ -212,15 +212,37 @@ document.getElementById("submit-ranking").addEventListener("click", async () => 
 
   console.log("📬 Submitting ranking with scores:", scoredRanking);
 
-  await fetch("/api/rankings", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ ranking: scoredRanking })
-  });
+ const res = await fetch("/api/rankings", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ ranking: scoredRanking })
+});
 
-  document.getElementById("submit-ranking").disabled = true;
-  updateRankingCount();
-  loadCards();
+// Try to parse error message or fallback to status code
+let result = {};
+try {
+  result = await res.clone().json();
+} catch {
+  result = { error: await res.text() };
+}
+
+if (!res.ok) {
+  const message = result.error || `Server error ${res.status}`;
+  alert(message); // ✅ This shows the 429 error to user
+
+  if (res.status === 429) {
+    console.warn("⏳ Too many requests – disabling button temporarily");
+    document.getElementById("submit-ranking").disabled = true;
+    setTimeout(() => {
+      document.getElementById("submit-ranking").disabled = false;
+    }, 60000); // 60 seconds
+  }
+  return;
+}
+
+document.getElementById("submit-ranking").disabled = true;
+updateRankingCount();
+loadCards();
 });
 
 window.addEventListener("DOMContentLoaded", () => {

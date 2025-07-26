@@ -13,20 +13,16 @@ async function loadCards() {
 
   try {
     const res = await fetch("/api/cards/random");
-    const contentType = res.headers.get("content-type");
+    const result = await res.json();
 
-    if (!res.ok) throw new Error(`Server error ${res.status}: ${await res.text()}`);
-    if (!contentType?.includes("application/json")) throw new Error("Expected JSON response");
+   if (!Array.isArray(result)) throw new Error(result?.message || "Invalid response format");
 
-    const cards = await res.json();
-    if (!Array.isArray(cards)) throw new Error(cards?.message || "Invalid response format");
-
-    if (cards.length < 4) {
+    if (result.length < 4) {
       container.innerHTML = `<p style="text-align:center">⚠️ Not enough cards available in the database.</p>`;
       return;
     }
 
-    cards.forEach(card => {
+    result.forEach(card => {
       const div = document.createElement("div");
       div.classList.add("card-item");
       div.dataset.id = card.id;
@@ -107,8 +103,8 @@ async function loadLeaderboard() {
   }
 }
 
-// 🎯 Submit ranked cards
 document.getElementById("submit-ranking").addEventListener("click", async () => {
+  const submitBtn = document.getElementById("submit-ranking");
   const rankedCards = [...document.querySelectorAll(".card-item")].map(el => el.dataset.id);
 
   if (rankedCards.length !== 4) {
@@ -116,20 +112,49 @@ document.getElementById("submit-ranking").addEventListener("click", async () => 
     return;
   }
 
+  submitBtn.disabled = true;
+
   try {
     const res = await fetch("/api/rankings", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ranking: rankedCards })
+      body: JSON.stringify({
+        ranking: rankedCards.map((id, i) => ({ id, score: 2 - i }))
+      })
     });
 
-    const result = await res.json();
-    alert(result.message || "Ranking submitted!");
+    // Clone before reading
+    const clone = res.clone();
+    let result = {};
+    try {
+      const rawText = await clone.text();
+      result = JSON.parse(rawText);
+    } catch {
+      result = { error: "Unexpected response format" };
+    }
+
+    if (!res.ok) {
+      const message = result.error || `Server error ${res.status}`;
+      console.log("📛 Error received:", result);
+      alert(message); // ✅ This should now work for 429
+
+      if (res.status === 429) {
+        console.warn("⏳ Too many requests – disabling button for 60s");
+        submitBtn.disabled = true;
+        setTimeout(() => (submitBtn.disabled = false), 60000);
+      }
+
+      return;
+    }
+
     await loadLeaderboard();
     await loadCards();
+
   } catch (err) {
-    console.error("🚨 Failed to submit ranking:", err);
-    alert("Oops! Something went wrong submitting your ranking.");
+    console.error("🚨 Unexpected failure:", err);
+    alert("Unexpected error submitting your ranking. Please try again.");
+  } finally {
+    if (!submitBtn.disabled) submitBtn.disabled = false;
   }
 });
 
