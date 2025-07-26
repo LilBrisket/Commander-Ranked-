@@ -3,11 +3,19 @@ const cors = require('cors');
 const Database = require('better-sqlite3');
 const path = require('path');
 const fs = require('fs');
+const rateLimit = require('express-rate-limit');
+const { ipKeyGenerator } = require('express-rate-limit');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+app.use((req, res, next) => {
+  console.log(`📡 ${req.method} ${req.path} from ${req.ip} | forwarded: ${req.headers['x-forwarded-for'] || 'none'}`);
+  next();
+});
+
 // Choose DB path based on env or fallback
+
 const dbPath =
   process.env.DATABASE_PATH ||
   (process.env.RENDER_PERSISTENT_DIR
@@ -45,8 +53,33 @@ db.prepare(`
   )
 `).run();
 
+app.set('trust proxy', 1); // ✅ Enable IP detection for rate-limiting (esp. behind Render or proxies)
+
 app.use(cors());
 app.use(express.json());
+const limiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 4, // limit each IP to 3 requests per windowMs
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests. Please wait a moment and try again.' },
+  keyGenerator: (req) => {
+    const key = ipKeyGenerator(req);
+    const ip = typeof key === 'string' ? key : req.ip;
+    console.log(`🔑 Rate limit key used: ${ip}`);
+    return ip;
+  },
+  handler: (req, res, next, options) => {
+    console.log(`⛔ Rate limit triggered for IP: ${req.ip}`);
+    res
+      .status(options.statusCode)
+      .setHeader("Content-Type", "application/json")
+      .setHeader("Access-Control-Allow-Origin", "*") // ✅ Crucial for browser JS to see the message
+      .setHeader("Access-Control-Allow-Headers", "Content-Type") // ✅ Crucial for preflight handling
+      .json(options.message);
+  }
+});
+
 app.use(express.static('public'));
 
 // 🃏 Get random cards
@@ -71,8 +104,8 @@ app.get('/api/cards/random', (req, res) => {
   }
 });
 
-// 📩 Submit rankings
-app.post('/api/rankings', (req, res) => {
+// 📩 Submit rankings (with limiter applied directly)
+app.post('/api/rankings', limiter, (req, res) => {
   const { ranking } = req.body;
 
   if (!Array.isArray(ranking) || ranking.length !== 4) {
