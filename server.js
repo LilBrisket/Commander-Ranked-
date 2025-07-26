@@ -10,7 +10,9 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use((req, res, next) => {
-  console.log(`📡 ${req.method} ${req.path} from ${req.ip} | forwarded: ${req.headers['x-forwarded-for'] || 'none'}`);
+  if (process.env.NODE_ENV !== 'production') {
+    console.log(`📡 ${req.method} ${req.path} from ${req.ip} | forwarded: ${req.headers['x-forwarded-for'] || 'none'}`);
+  }
   next();
 });
 
@@ -59,23 +61,32 @@ app.use(cors());
 app.use(express.json());
 const limiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
-  max: 4, // limit each IP to 3 requests per windowMs
+  max: 4, // limit each IP to 4 requests per windowMs
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many requests. Please wait a moment and try again.' },
+
   keyGenerator: (req) => {
     const key = ipKeyGenerator(req);
     const ip = typeof key === 'string' ? key : req.ip;
-    console.log(`🔑 Rate limit key used: ${ip}`);
+
+    // ✅ Only log in non-production
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`🔑 Rate limit key used: ${ip}`);
+    }
+
     return ip;
   },
+
   handler: (req, res, next, options) => {
-    console.log(`⛔ Rate limit triggered for IP: ${req.ip}`);
+    if (process.env.NODE_ENV !== 'production') {
+  console.log(`⛔ Rate limit triggered for IP: ${req.ip}`);
+}
     res
       .status(options.statusCode)
       .setHeader("Content-Type", "application/json")
-      .setHeader("Access-Control-Allow-Origin", "*") // ✅ Crucial for browser JS to see the message
-      .setHeader("Access-Control-Allow-Headers", "Content-Type") // ✅ Crucial for preflight handling
+      .setHeader("Access-Control-Allow-Origin", "*")
+      .setHeader("Access-Control-Allow-Headers", "Content-Type")
       .json(options.message);
   }
 });
@@ -120,27 +131,38 @@ app.post('/api/rankings', limiter, (req, res) => {
       seen = seen + 1
   `);
 
+if (process.env.NODE_ENV !== 'production') {
   console.log('📩 Received ranking:', ranking);
+}
 
-  for (const { id, score } of ranking) {
-    try {
-      const row = db.prepare(`SELECT name FROM cards WHERE id = ?`).get(id);
-      if (row) {
-        stmt.run(id, row.name, score);
-        console.log(`✅ Updated ${row.name} (${id}) with ${score} pts`);
-      } else {
-        console.warn(`⚠️ Card not found: ${id}`);
-      }
-    } catch (err) {
-      console.error(`❌ Error updating card ${id}:`, err.message);
-    }
+for (const { id, score } of ranking) {
+  if (typeof score !== 'number') {
+    return res.status(400).json({ error: `Invalid score for card ${id}. Must be a number.` });
   }
 
-  db.prepare(`
-    INSERT INTO meta (key, value)
-    VALUES ('rankings_submitted', 4)
-    ON CONFLICT(key) DO UPDATE SET value = value + 4
-  `).run();
+  try {
+    const row = db.prepare(`SELECT name FROM cards WHERE id = ?`).get(id);
+    if (row) {
+      stmt.run(id, row.name, score);
+      if (process.env.NODE_ENV !== 'production') {
+        console.log(`✅ Updated ${row.name} (${id}) with ${score} pts`);
+      }
+    } else {
+      if (process.env.NODE_ENV !== 'production') {
+        console.warn(`⚠️ Card not found: ${id}`);
+      }
+    }
+  } catch (err) {
+    console.error(`❌ Error updating card ${id}:`, err.message);
+  }
+}
+
+ const count = ranking.length;
+db.prepare(`
+  INSERT INTO meta (key, value)
+  VALUES ('rankings_submitted', ?)
+  ON CONFLICT(key) DO UPDATE SET value = value + ?
+`).run(count, count);
 
   res.json({ message: 'Thanks for ranking!' });
 });
@@ -155,7 +177,11 @@ app.get('/api/leaderboard', (req, res) => {
     const name = req.query.name?.trim();
     const color = req.query.color?.trim();
     const type = req.query.type?.trim();
-    const sort = req.query.sort?.trim().toLowerCase();
+    const sort = (req.query.sort || '').trim().toLowerCase();
+
+    if ((name?.length || 0) > 50 || (color?.length || 0) > 50 || (type?.length || 0) > 50) {
+  return res.status(400).json({ error: "Filter values must be under 50 characters." });
+}
 
     let whereClause = `WHERE active=1 AND points != 0 AND image IS NOT NULL AND image != ''`;
     const filters = [];

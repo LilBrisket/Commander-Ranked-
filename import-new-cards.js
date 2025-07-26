@@ -27,9 +27,12 @@ const insertOrIgnore = db.prepare(`
 `);
 
 let added = 0;
+const seenOracleIds = new Set();
 
 for (const card of scryfallCards) {
-  // filter unwanted cards
+  const oracleId = card.oracle_id;
+  if (!oracleId || seenOracleIds.has(oracleId)) continue;
+
   if (
     card.lang !== 'en' ||
     card.legalities?.commander !== 'legal' ||
@@ -63,7 +66,10 @@ for (const card of scryfallCards) {
 
   const result = insertOrIgnore.run(id, name, image, color, type);
   if (result.changes > 0) added++;
+
+  seenOracleIds.add(oracleId);
 }
 
 console.log(`✅ Added ${added} new cards to the database.`);
+
 

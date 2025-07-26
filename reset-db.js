@@ -13,7 +13,7 @@ console.log(`📂 Using database: ${dbPath}`);
 const db = new Database(dbPath);
 db.pragma('journal_mode = WAL');
 
-db.prepare('DELETE FROM cards').run();
+db.prepare('DELETE FROM cards WHERE 1=1').run();
 console.log('🧼 Cleared existing cards');
 
 schema.ensureCardsTable(db);
@@ -33,13 +33,14 @@ const insert = db.prepare(`
 `);
 
 let added = 0;
-const seenNames = new Set();
+const seenOracleIds = new Set();
 
 for (const card of scryfallCards) {
   const id = card.id;
   const name = card.name;
 
-  if (seenNames.has(name)) continue;
+  const oracleId = card.oracle_id;
+if (!oracleId || seenOracleIds.has(oracleId)) continue;
 
   const imageFront =
     card.image_uris?.normal ||
@@ -78,7 +79,7 @@ for (const card of scryfallCards) {
   }
 
   insert.run(id, name, image, imageBack, color, type);
-  seenNames.add(name);
+  seenOracleIds.add(oracleId);
   added++;
 }
 
