@@ -44,7 +44,8 @@ db.prepare(`
     points INTEGER DEFAULT 0,
     seen INTEGER DEFAULT 0,
     color TEXT,
-    type TEXT
+    type TEXT,
+    active INTEGER DEFAULT 1
   )
 `).run();
 
