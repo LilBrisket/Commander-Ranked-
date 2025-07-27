@@ -337,6 +337,19 @@ a {
   transform: scale(1.05);
 }
 
+#result-count {
+  color: #000 !important;
+  font-weight: 600;
+  font-size: 1rem;
+  margin-bottom: 1rem;
+}
+
+#pagination-controls span {
+  color: #000 !important;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
 /* 🖼️ Explicit Image Style */
 .card-image {
   max-width: 100%;
@@ -578,6 +591,38 @@ a {
 #desktop-labels {
   display: none; /* hide by default */
 }
+#deck-progress-bar {
+  max-width: 800px;
+  margin: 1rem auto 2rem;
+  padding: 1rem;
+  background: #111;
+  border-radius: 1.5rem;
+  color: white;
+  font-weight: bold;
+  font-family: 'Inter', sans-serif;
+  position: relative;
+  text-align: center;
+}
+
+.progress-header {
+  margin-bottom: 0.5rem;
+  font-size: 1.1rem;
+}
+
+.progress-track {
+  position: relative;
+  height: 12px;
+  background: #333;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: #00aaff;
+  width: 0%;
+  transition: width 0.5s ease-in-out;
+}
 
 @media (min-width: 1025px) {
   /* hide mobile labels */
@@ -643,6 +688,16 @@ a {
   padding-top: 5.3rem; /* ✅ only for ranker page */
 }
 }
+
+a[href^="mailto:"] {
+  color: #0077cc;
+  font-weight: 600;
+}
+
+a[href^="mailto:"]:hover {
+  color: #005fa3;
+}
+
 
 
 

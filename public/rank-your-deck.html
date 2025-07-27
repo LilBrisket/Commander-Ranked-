@@ -25,8 +25,17 @@
 
   <main class="container">
     <section style="text-align: center; color: #000;">
-      <p style="font-size: 1.2rem; color: #000; margin-top: 1rem;">Under construction, coming soon</p>
-      <img src="https://cards.scryfall.io/large/front/f/0/f0455a79-15f4-4ea6-87ae-263ce943cfac.jpg?1673481685" alt="The Beamtown Bullies" style="max-width: 250px; margin-top: 1.5rem; border-radius: 8px;" />
+      <p style="font-size: 1.2rem; color: #000; margin-top: 1rem;">This feature is currently under construction and will go live once all Commander-legal cards have received rankings.
+    Stay tuned — your deck's power score is on the way!</p>
+      <div id="deck-progress-bar">
+  <div class="progress-header">
+    <span id="ranked-count">0</span> / <span id="total-count">0</span> Cards Ranked
+  </div>
+  <div class="progress-track">
+    <div class="progress-fill" id="progress-fill"></div>
+  </div>
+</div>
+      <img src="https://cards.scryfall.io/large/front/f/0/f0455a79-15f4-4ea6-87ae-263ce943cfac.jpg?1673481685" alt="The Beamtown Bullies" style="max-width: 250px; margin-top: 0.25rem; border-radius: 8px;" />
     </section>
   </main>
 
@@ -35,12 +44,30 @@
     Magic: The Gathering and its trademarks are © Wizards of the Coast. This site is unaffiliated.
   </footer>
   <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      document.querySelector('.menu-toggle').addEventListener('click', () => {
-        document.querySelector('.nav-links').classList.toggle('show');
-      });
+  document.addEventListener('DOMContentLoaded', () => {
+    // Mobile menu toggle
+    document.querySelector('.menu-toggle').addEventListener('click', () => {
+      document.querySelector('.nav-links').classList.toggle('show');
     });
- </script>
+
+    // Fetch progress bar data from backend
+    fetch('/api/progress')
+      .then(res => res.json())
+      .then(data => {
+        const ranked = data.ranked || 0;
+        const total = data.total || 0;
+
+        document.getElementById('ranked-count').textContent = ranked;
+        document.getElementById('total-count').textContent = total;
+
+        const percent = total > 0 ? ranked / total : 0;
+        document.getElementById('progress-fill').style.width = `${percent * 100}%`;
+      })
+      .catch(err => {
+        console.error('❌ Failed to fetch progress:', err);
+      });
+  });
+</script>
 </body>
 </html>
 

@@ -15,7 +15,7 @@ async function loadCards() {
     const res = await fetch("/api/cards/random");
     const result = await res.json();
 
-   if (!Array.isArray(result)) throw new Error(result?.message || "Invalid response format");
+    if (!Array.isArray(result)) throw new Error(result?.message || "Invalid response format");
 
     if (result.length < 4) {
       container.innerHTML = `<p style="text-align:center">⚠️ Not enough cards available in the database.</p>`;
@@ -33,7 +33,7 @@ async function loadCards() {
       img.className = "card-image";
       img.onerror = () => {
         console.warn(`⚠️ Failed to load image for ${card.name}`);
-        img.src = "https://placehold.co/223x310?text=Image+Missing";
+        img.src = fallbackImage;
       };
 
       const label = document.createElement("p");
@@ -103,6 +103,17 @@ async function loadLeaderboard() {
   }
 }
 
+// 🟡 NEW: Load deck ranking progress
+async function loadProgress() {
+  try {
+    const res = await fetch("/api/progress");
+    const { ranked, total } = await res.json();
+    updateDeckProgress(ranked, total);
+  } catch (err) {
+    console.error("❌ Failed to load deck progress:", err);
+  }
+}
+
 document.getElementById("submit-ranking").addEventListener("click", async () => {
   const submitBtn = document.getElementById("submit-ranking");
   const rankedCards = [...document.querySelectorAll(".card-item")].map(el => el.dataset.id);
@@ -149,6 +160,7 @@ document.getElementById("submit-ranking").addEventListener("click", async () => 
 
     await loadLeaderboard();
     await loadCards();
+    await loadProgress(); // ✅ update after new ranking is submitted
 
   } catch (err) {
     console.error("🚨 Unexpected failure:", err);
@@ -158,11 +170,23 @@ document.getElementById("submit-ranking").addEventListener("click", async () => 
   }
 });
 
+// 🔧 Progress bar update function
+function updateDeckProgress(rankedCount, totalCards) {
+  const percent = Math.min((rankedCount / totalCards) * 100, 100);
+
+  document.getElementById('ranked-count').textContent = rankedCount;
+  document.getElementById('total-count').textContent = totalCards;
+  document.getElementById('progress-fill').style.width = `${percent}%`;
+  document.getElementById('progress-marker').style.left = `${percent}%`;
+}
+
 // 🚀 Initialize
 (async () => {
   await loadCards();
   await loadLeaderboard();
+  await loadProgress(); // ✅ added here
 })();
+
 
 
 

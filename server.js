@@ -277,6 +277,27 @@ app.get('/api/stats', (req, res) => {
   }
 });
 
+app.get('/api/progress', (req, res) => {
+  try {
+    const total = db.prepare(`
+      SELECT COUNT(*) AS count
+      FROM cards
+      WHERE active = 1 AND image IS NOT NULL AND image != ''
+    `).get().count;
+
+    const ranked = db.prepare(`
+  SELECT COUNT(*) AS count
+  FROM cards
+  WHERE active = 1 AND points != 0 AND image IS NOT NULL AND image != ''
+`).get().count;
+
+    res.json({ ranked, total });
+  } catch (err) {
+    console.error('❌ Error fetching progress data:', err);
+    res.status(500).json({ error: 'Failed to fetch progress data.' });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`🚀 Server running at http://localhost:${PORT}`);
 });
